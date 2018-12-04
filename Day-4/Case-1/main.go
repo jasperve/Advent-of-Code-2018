@@ -15,8 +15,6 @@ import (
 
 const timeFormat = "2006-01-02 15:04"
 var timestampRegex *regexp.Regexp
-var numberRegex *regexp.Regexp
-var minutesRegex *regexp.Regexp
 
 type byTimestamp []string
 func (s byTimestamp) Len() int {
@@ -36,8 +34,8 @@ func (s byTimestamp) Less(i, j int) bool {
 func main() {
 
 	timestampRegex = regexp.MustCompile("\\[(.*)\\]")
-	numberRegex = regexp.MustCompile("#(\\d*)")
-	minutesRegex = regexp.MustCompile("\\d{2}:(\\d{2})")
+	numberRegex := regexp.MustCompile("#(\\d*)")
+	minutesRegex := regexp.MustCompile("\\d{2}:(\\d{2})")
 
 	lines := []string{}
 

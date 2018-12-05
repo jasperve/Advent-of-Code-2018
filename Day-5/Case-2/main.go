@@ -9,16 +9,13 @@ import (
 var remBytes map[int]int
 var input []byte
 
-
 func main() {
 
-	alphabet := "abcdefghijklmnopqrstuvwxyz"
-
-	for j:=0; j < len(alphabet); j++ {
+	for j := 'a'; j <= 'z'; j++ {
 
 		input, _ = ioutil.ReadFile("input.txt")
-		input = []byte(strings.Replace(string(input), string(alphabet[j]), "", -1))
-		input = []byte(strings.Replace(string(input), string(alphabet[j]-32), "", -1))
+		input = []byte(strings.Replace(string(input), string(j), "", -1))
+		input = []byte(strings.Replace(string(input), string(j-32), "", -1))
 
 		remBytes = make(map[int]int)
 		for i := 0; i < len(input)-1; i++ {
@@ -28,7 +25,7 @@ func main() {
 			input = append(input[:remBytes[i]], input[remBytes[i]+1:]...)
 		}
 
-		fmt.Printf("Letter %v gives this many chars left: %v\n", string(alphabet[j]), len(input))
+		fmt.Printf("Letter %v gives this many chars left: %v\n", string(j), len(input))
 
 	}
 

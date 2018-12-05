@@ -21,7 +21,6 @@ func main() {
 		input = append(input[:remBytes[i]], input[remBytes[i]+1:]...)
 	}
 
-	fmt.Println(string(input))
 	fmt.Println(len(input))
 
 }

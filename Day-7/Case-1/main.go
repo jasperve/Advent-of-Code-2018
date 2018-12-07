@@ -29,7 +29,7 @@ func main() {
 	output := []uint8{}
 
 	for len(steps) > 0 {
-		for i := 65; i <= 90; i++ {
+		for i := 'A'; i <= 'Z'; i++ {
 			if step, ok := steps[uint8(i)]; ok {
 				for _, v := range output {
 					if _, ok := step[v]; ok { delete(step, v) }

@@ -54,14 +54,14 @@ func main() {
 					elves[j].step = 0
 				}
 
-				for i := 65; i <= 90; i++ {
+				for i := 'A'; i <= 'Z'; i++ {
 					if step, ok := steps[uint8(i)]; ok {
 						for _, v := range output {
 							if _, ok := step[v]; ok { delete(step, v) }
 						}
 						if len(step) == 0 {
 							elves[j].step = uint8(i)
-							elves[j].timeLeft = i - 4
+							elves[j].timeLeft = int(i) - 4
 							delete(steps, uint8(i))
 							break
 						}

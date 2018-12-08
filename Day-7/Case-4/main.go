@@ -7,11 +7,11 @@ import (
 )
 
 type elf struct {
-	timeLeft int
+	timeFinished int
 	step uint8
 }
 
-const amountElves = 4
+const amountElves = 5
 
 func main() {
 
@@ -33,36 +33,40 @@ func main() {
 	}
 
 	output := []uint8{}
-	time := 0
+	timePassed, timeFinished := 0, 0
 
 	elves := []elf{}
 	for i := 0; i < amountElves; i++ {
-		elves = append(elves, elf{timeLeft: 0, step: 0,})
+		elves = append(elves, elf{timeFinished: 0, step: 0,})
 	}
-	activeElf := true
 
-	for len(steps) > 0 || activeElf {
+	for len(steps) > 0 {
 
-		activeElf = false
+		minTimeFinished := 1000000000000
 
 		for j := 0; j < len(elves); j++ {
 
-			if elves[j].timeLeft == 0 {
+			if elves[j].timeFinished <= timePassed {
 
 				if elves[j].step != 0 {
 					output = append(output, elves[j].step)
 					elves[j].step = 0
+					elves[j].timeFinished = 0
 				}
 
 				for i := 'A'; i <= 'Z'; i++ {
 					if step, ok := steps[uint8(i)]; ok {
 						for _, v := range output {
-							if _, ok := step[v]; ok { delete(step, v) }
+							if _, ok := step[v]; ok {
+								delete(step, v)
+							}
 						}
 						if len(step) == 0 {
+
 							elves[j].step = uint8(i)
-							elves[j].timeLeft = int(i) - 4
+							elves[j].timeFinished = timePassed + int(i) - 4
 							delete(steps, uint8(i))
+
 							break
 						}
 					}
@@ -70,17 +74,22 @@ func main() {
 
 			}
 
-			if elves[j].timeLeft > 0 {
-				activeElf = true
-				elves[j].timeLeft--
+		}
+
+		for j := 0; j < len(elves); j++ {
+			if elves[j].timeFinished < minTimeFinished && elves[j].timeFinished > 0 {
+				minTimeFinished = elves[j].timeFinished
+			}
+			if elves[j].timeFinished > timePassed && elves[j].timeFinished > timeFinished {
+				timeFinished = elves[j].timeFinished
 			}
 
 		}
 
-		if activeElf { time++ }
+		timePassed = minTimeFinished
 
 	}
 
-	fmt.Println(time)
+	fmt.Println(timeFinished)
 
 }

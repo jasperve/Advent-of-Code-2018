@@ -79,6 +79,8 @@ func main() {
 
 		if activeElf { time++ }
 
+		fmt.Println(elves)
+
 	}
 
 	fmt.Println(string(output))

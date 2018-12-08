@@ -33,14 +33,14 @@ func main() {
 	}
 
 	output := []uint8{}
-	timePassed, timeFinished := 0, 0
+	timePassed := 0
 
 	elves := []elf{}
 	for i := 0; i < amountElves; i++ {
 		elves = append(elves, elf{timeFinished: 0, step: 0,})
 	}
 
-	for len(steps) > 0 {
+	for {
 
 		minTimeFinished := 1000000000000
 
@@ -80,16 +80,18 @@ func main() {
 			if elves[j].timeFinished < minTimeFinished && elves[j].timeFinished > 0 {
 				minTimeFinished = elves[j].timeFinished
 			}
-			if elves[j].timeFinished > timePassed && elves[j].timeFinished > timeFinished {
-				timeFinished = elves[j].timeFinished
-			}
 
 		}
 
 		timePassed = minTimeFinished
 
+		if len(steps) == 0 {
+			break
+		}
+
 	}
 
-	fmt.Println(timeFinished)
+	fmt.Println(string(output))
+	fmt.Println(timePassed)
 
 }

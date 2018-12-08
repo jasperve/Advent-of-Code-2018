@@ -41,7 +41,7 @@ func main() {
 	}
 	activeElf := true
 
-	for len(steps) > 0 || activeElf {
+	for activeElf {
 
 		activeElf = false
 
@@ -81,6 +81,7 @@ func main() {
 
 	}
 
+	fmt.Println(string(output))
 	fmt.Println(time)
 
 }

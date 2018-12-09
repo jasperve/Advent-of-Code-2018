@@ -34,21 +34,21 @@ func main() {
 
 			if nextNumber%23 == 0 {
 
-				players[i] += nextNumber + getNeighbour(&currentMarble,-7).number
-				getNeighbour(&currentMarble,-8).right = getNeighbour(&currentMarble,-6)
-				getNeighbour(&currentMarble,-6).left = getNeighbour(&currentMarble,-8)
-				currentMarble = *getNeighbour(&currentMarble,-6)
+				players[i] += nextNumber + currentMarble.getNeighbour(-7).number
+				currentMarble.getNeighbour(-8).right = currentMarble.getNeighbour(-6)
+				currentMarble.getNeighbour(-6).left = currentMarble.getNeighbour(-8)
+				currentMarble = *currentMarble.getNeighbour(-6)
 
 			} else {
 
 				newMarble := marble {
 					number: nextNumber,
-					left: getNeighbour(&currentMarble, 1),
-					right: getNeighbour(&currentMarble, 2),
+					left: currentMarble.getNeighbour(1),
+					right: currentMarble.getNeighbour(2),
 				}
 
-				getNeighbour(&currentMarble, 2).left = &newMarble
-				getNeighbour(&currentMarble, 1).right = &newMarble
+				currentMarble.getNeighbour(2).left = &newMarble
+				currentMarble.getNeighbour(1).right = &newMarble
 				currentMarble = newMarble
 
 			}
@@ -71,13 +71,12 @@ func main() {
 
 }
 
-
-func getNeighbour(current *marble, offset int) *marble {
+func (current *marble) getNeighbour(offset int) *marble {
 	var actual *marble
 	if offset < 0 {
-		actual = getNeighbour(current.left, offset+1)
+		actual = current.left.getNeighbour(offset + 1)
 	} else if offset > 0 {
-		actual = getNeighbour(current.right, offset-1)
+		actual = current.right.getNeighbour(offset - 1)
 	} else if offset == 0 {
 		actual = current
 	}

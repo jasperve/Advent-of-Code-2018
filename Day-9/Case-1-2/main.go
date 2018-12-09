@@ -8,7 +8,7 @@ type marble struct {
 	right *marble
 }
 
-const maxNumber = 7162600 //25 sample
+const maxNumber = 716260000 //25 sample
 const numPlayers = 438 //9 sample
 
 func main() {

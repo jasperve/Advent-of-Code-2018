@@ -6,7 +6,6 @@ import (
 	"image"
 	"image/color"
 	"image/png"
-	"math"
 	"os"
 	"regexp"
 	"strconv"
@@ -49,7 +48,7 @@ func main() {
 	MAIN:
 	for {
 
-		minX, maxX, minY, maxY := 0, 0, 0, 0
+		minX, maxX, minY, maxY := 2147483647, -2147483647, 2147483647, -2147483647
 
 		locations = make(map[string]bool)
 
@@ -86,21 +85,21 @@ func main() {
 			}
 		}
 
-		addX, addY := 0, 0
-		if minX < 0 { addX = int(math.Abs(float64(minX))) }
-		if minX < 0 { addY = int(math.Abs(float64(minY))) }
+		modX := minX * -1
+		modY := minY * -1
 
-		img := image.NewRGBA(image.Rectangle{image.Point{0, 0}, image.Point{maxX+addX+10, maxY+addY+10}})
+		img := image.NewRGBA(image.Rectangle{image.Point{0, 0}, image.Point{maxX+modX+10, maxY+modY+10}})
+
 		cyan := color.RGBA{100, 200, 200, 0xff}
 
 		for coordinate, _ := range locations {
 			coordinateSplit := strings.Split(coordinate, ",")
 			x, _ := strconv.Atoi(coordinateSplit[0])
 			y, _ := strconv.Atoi(coordinateSplit[1])
-			img.Set(x+addX+5, y+addY+5, cyan)
+			img.Set(x+modX+5, y+modY+5, cyan)
 		}
 
-		f, _ := os.Create("output-real.png")
+		f, _ := os.Create("valid.png")
 		png.Encode(f, img)
 
 		fmt.Printf("After %v seconds the stars line up!\n", iteration)

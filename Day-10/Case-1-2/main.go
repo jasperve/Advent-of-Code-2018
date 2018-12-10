@@ -24,7 +24,7 @@ func main() {
 
 	stars := []star{}
 
-	file, _ := os.Open("input-test.txt")
+	file, _ := os.Open("input.txt")
 	input := bufio.NewScanner(file)
 
 	for input.Scan() {
@@ -100,7 +100,7 @@ func main() {
 			img.Set(x+addX+5, y+addY+5, cyan)
 		}
 
-		f, _ := os.Create("output-test.png")
+		f, _ := os.Create("output-real.png")
 		png.Encode(f, img)
 
 		fmt.Printf("After %v seconds the stars line up!\n", iteration)

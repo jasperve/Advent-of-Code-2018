@@ -24,7 +24,7 @@ func main() {
 
 	stars := []star{}
 
-	file, _ := os.Open("input-test.txt")
+	file, _ := os.Open("input.txt")
 	input := bufio.NewScanner(file)
 
 	for input.Scan() {

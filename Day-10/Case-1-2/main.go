@@ -29,7 +29,6 @@ func main() {
 	for input.Scan() {
 
 		regex, _ := regexp.Compile("position=<.*?(\\-?\\d*),.*?(\\-?\\d*)> velocity=<.*?(\\-?\\d*),.*?(\\-?\\d*)>")
-
 		matches := regex.FindStringSubmatch(input.Text())
 
 		x, _ := strconv.Atoi(matches[1])

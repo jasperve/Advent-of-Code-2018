@@ -2,23 +2,30 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
 	"strconv"
+	"io/ioutil"
+	"log"
 	"strings"
 )
 
 func main() {
+	input := splitToIntSlice("input.txt", " ")
+	fmt.Println(calculateMd(input))
+}
 
-	input, _ := ioutil.ReadFile("input.txt")
-	inputSplit := []int{}
-
-	for _, v := range strings.Split(string(input), " ") {
-		num, _ := strconv.Atoi(v)
-		inputSplit = append(inputSplit, num)
+func splitToIntSlice(location string, sep string) (out []int) {
+	input, err := ioutil.ReadFile(location)
+	if err != nil {
+		log.Fatalln("FATAL: Unable to open file at location: %v", location)
 	}
-
-	fmt.Println(calculateMd(inputSplit))
-
+	for _, token := range strings.Split(string(input), sep) {
+		value, err := strconv.Atoi(token)
+		if err != nil {
+			log.Fatalln("FATAL: Unable to convert %v", token)
+		}
+		out = append(out, value)
+	}
+	return out
 }
 
 func calculateMd(input []int) (int, int) {

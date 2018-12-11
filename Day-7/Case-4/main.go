@@ -88,7 +88,6 @@ func main() {
 		if len(steps) == 0 {
 			break
 		}
-
 	}
 
 	fmt.Println(string(output))

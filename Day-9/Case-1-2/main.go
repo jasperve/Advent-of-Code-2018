@@ -13,6 +13,8 @@ const numPlayers = 438 //9 sample
 
 func main() {
 
+	fmt.Println("blaat")
+
 	players := make(map[int]int)
 
 	for i := 1; i <= numPlayers; i++ {

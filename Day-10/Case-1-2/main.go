@@ -98,10 +98,10 @@ func main() {
 			img.Set(x+modX+5, y+modY+5, cyan)
 		}
 
-		f, _ := os.Create("valid.png")
+		f, _ := os.Create("output.png")
 		png.Encode(f, img)
 
-		fmt.Printf("After %v seconds the stars line up!\n", iteration)
+		fmt.Printf("After %v seconds the stars line up!", iteration)
 
 		break
 

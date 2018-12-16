@@ -77,7 +77,7 @@ func main() {
 	grid := [][]*object{}
 	players := []object{}
 
-	file, err := os.Open("input.txt")
+	file, err := os.Open("input-test.txt")
 	if err != nil { log.Fatalln("Unable to open input file") }
 
 	input := bufio.NewScanner(file)
@@ -127,21 +127,42 @@ func main() {
 			}
 
 			sort.Sort(byDistance(opponents))
-
-			shortestRoute := []coordinate{}
+			
+			lenShortestRoute := -1
+			routes := [][]coordinate{}
 
 			for o := 0; o < len(opponents); o++ {
 
 				shortestDistance := int(math.Abs(float64(opponents[o].x-players[p].x))) + int(math.Abs(float64(opponents[o].y-players[p].y)))
 
-				if shortestDistance <= len(shortestRoute) || len(shortestRoute) == 0 {
+				if shortestDistance <= lenShortestRoute || lenShortestRoute == -1 {
 					fmt.Printf("Finding shortest route from %v, %v towards %v, %v\n", players[p].x, players[p].y, opponents[o].x, opponents[o].y)
-					shortestRoute = findShortestRoute(players[p], opponents[o], grid)
+					route := findRoute(players[p], opponents[o], grid)
+					if route == nil { continue }
+					if len(route) <= lenShortestRoute || lenShortestRoute == -1 {
+						routes = append(routes, route)
+						lenShortestRoute = len(route)
+					}
 				}
 			}				
 
-			for sR := 0; sR < len(shortestRoute); sR++ {
-				fmt.Printf("x: %v, y: %v\n", shortestRoute[sR].x, shortestRoute[sR].y)
+			for r := 0; r < len(routes); r++ {
+				if len(routes[r]) > lenShortestRoute { 
+					routes = append(routes[:r], routes[r+1:]...)
+					r--
+				}
+			}
+
+			if len(routes) == 0 {
+				fmt.Println("No route found!")
+			}
+			if len(routes) > 0 {
+				for r := 0; r < len(routes); r++ {
+					fmt.Println("possible shortest routes:")
+					for rr := 0; rr < len(routes[r]); rr++ {
+						fmt.Printf("x: %v, y: %v\n", routes[r][rr].x, routes[r][rr].y)
+					}
+				}
 			}
 
 		}
@@ -158,7 +179,7 @@ func main() {
 
 
 
-func findShortestRoute(startPosition object, targetPosition object, grid [][]*object) (route []coordinate) {
+func findRoute(startPosition object, targetPosition object, grid [][]*object) (route []coordinate) {
 
 	startCoordinate := coordinate { x: startPosition.x, y: startPosition.y, priority: 0, stepsTaken: 0, stepsToGo: 0 }
 	endCoordinate := coordinate { x: targetPosition.x, y: targetPosition.y }
@@ -166,6 +187,8 @@ func findShortestRoute(startPosition object, targetPosition object, grid [][]*ob
 	openList := []coordinate{}
 	openList = append(openList, startCoordinate)
 	closedList := make(map[int]map[int]coordinate)
+
+	routeFound := false
 
 	INFINITYLOOP:
 	for len(openList) > 0 {
@@ -187,25 +210,23 @@ func findShortestRoute(startPosition object, targetPosition object, grid [][]*ob
 				if (y == -1 && x == 0) || (y == 0 && (x == -1 || x == 1)) || (y == 1 && x == 0) {
 					
 					if currentCoordinate.x + x == endCoordinate.x && currentCoordinate.y + y == endCoordinate.y {
-						fmt.Println("TARGET FOUND")
-						fmt.Println("SHORTEST ROUTE BACKWARDS:")
 						for currentCoordinate.parent != nil {
 							route = append(route, currentCoordinate)
 							currentCoordinate = *currentCoordinate.parent
 						}
+						routeFound = true
 						break INFINITYLOOP
-
 					}
 			
-					// IF a WALL, ELF or GOBLIN is found stop processing this coordinate
+					// If a WALL, ELF or GOBLIN is found stop processing this coordinate
 					if grid[currentCoordinate.y + y][currentCoordinate.x + x].class == WALL ||
 					   grid[currentCoordinate.y + y][currentCoordinate.x + x].class == ELF ||
 					   grid[currentCoordinate.y + y][currentCoordinate.x + x].class == GOBLIN {
 						continue XLOOP
 					}
 
+					// If the coordinate has already been marked as closed
 					if _, ok := closedList[currentCoordinate.y + y][currentCoordinate.x +x]; ok {
-						//fmt.Println("IN CLOSED LIST SO IGNORE")
 						continue XLOOP
 					}
 
@@ -246,6 +267,10 @@ func findShortestRoute(startPosition object, targetPosition object, grid [][]*ob
 		
 	}
 
-	return route
+	if routeFound {
+		return route
+	} 
+	
+	return nil
 
 }

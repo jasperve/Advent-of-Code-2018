@@ -134,7 +134,7 @@ func main() {
 
 				shortestDistance := int(math.Abs(float64(opponents[o].x-players[p].x))) + int(math.Abs(float64(opponents[o].y-players[p].y)))
 
-				if shortestDistance < len(shortestRoute) || len(shortestRoute) == 0 {
+				if shortestDistance <= len(shortestRoute) || len(shortestRoute) == 0 {
 					fmt.Printf("Finding shortest route from %v, %v towards %v, %v\n", players[p].x, players[p].y, opponents[o].x, opponents[o].y)
 					shortestRoute = findShortestRoute(players[p], opponents[o], grid)
 				}

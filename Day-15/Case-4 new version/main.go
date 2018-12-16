@@ -100,6 +100,27 @@ func main() {
 	// While there are still Goblins and Elfs
 	for {
 
+		for _, v := range grid {
+			for _, vi := range v {
+				if vi.class == WALL {
+					fmt.Printf("#")
+				}
+				if vi.class == EMPTY {
+					fmt.Printf(".")
+				}
+				if vi.class == ELF {
+					fmt.Printf("E")
+				}
+				if vi.class == GOBLIN {
+					fmt.Printf("G")
+				}
+			}
+			fmt.Printf("\n")
+		}
+		fmt.Println()
+		fmt.Println()
+		
+
 		for p := 0; p < len(players); p++ {
 
 			opponents := []object{}
@@ -124,10 +145,10 @@ func main() {
 				shortestDistance := int(math.Abs(float64(opponents[o].x-players[p].x))) + int(math.Abs(float64(opponents[o].y-players[p].y)))
 
 				if shortestDistance <= lenShortestRoute || lenShortestRoute == -1 {
-					fmt.Printf("Finding shortest route from %v, %v towards %v, %v\n", players[p].x, players[p].y, opponents[o].x, opponents[o].y)
+					//fmt.Printf("Finding shortest route from %v, %v towards %v, %v\n", players[p].x, players[p].y, opponents[o].x, opponents[o].y)
 					route, routeFound := findRoute(players[p], opponents[o], grid)
 					if !routeFound { 
-						fmt.Println("Player is stuck in position")
+						//fmt.Println("Player is stuck in position")
 						continue
 					}
 					//fmt.Println("amount of steps required to reach: ", len(route))
@@ -148,10 +169,10 @@ func main() {
 			}
 
 			if len(routes) == 0 {
-				fmt.Println("No route found!")
+				//fmt.Println("No route found!")
 			} else {	
 				if len(routes[0]) == 0 {
-					fmt.Println("Player is standing next to opponent")
+					//fmt.Println("Player is standing next to opponent")
 				} else {
 					//fmt.Println("Player makes a step to opponent")
 					for r := 0; r < len(routes[0]); r++ {
@@ -160,7 +181,7 @@ func main() {
 
 					oldX, oldY := players[p].x, players[p].y
 
-					fmt.Printf("Player moved towards x: %v, y: %v\n", routes[0][len(routes[0])-1].x, routes[0][len(routes[0])-1].y )
+					//fmt.Printf("Player moved towards x: %v, y: %v\n", routes[0][len(routes[0])-1].x, routes[0][len(routes[0])-1].y )
 					players[p].x = routes[0][len(routes[0])-1].x
 					players[p].y = routes[0][len(routes[0])-1].y
 
@@ -171,9 +192,8 @@ func main() {
 			}
 			
 		}
-
+	
 	}
-
 	//fmt.Printf("Finding shortest route from %v, %v towards %v, %v\n", players[0].x, players[0].y, players[27].x, players[27].y)
 	//findShortestRoute(players[0], players[27], grid)
 

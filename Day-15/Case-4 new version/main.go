@@ -58,18 +58,6 @@ func (c byPriority) Less(i, j int) bool {
 	return c[i].priority < c[j].priority
 }
 
-/*type byPosition [][]*object
-
-func (c byPosition) Len() int {
-	return len(c)
-}
-func (c byPosition) Swap(i, j int) {
-	c[i], c[j] = c[j], c[i]
-}
-func (c byPosition) Less(i, j int) bool {
-	return c[i][len(c)-1].y < c[j][len(c)-1].y || (c[i][len(c)-1].y == c[j][len(c)-1].y && c[i][len(c)-1].x < c[j][len(c)-1].x)
-}*/
-
 var objects map[int]map[int]*object
 
 func main() {
@@ -77,7 +65,7 @@ func main() {
 	grid := [][]*object{}
 	players := []object{}
 
-	file, err := os.Open("input-test.txt")
+	file, err := os.Open("input.txt")
 	if err != nil { log.Fatalln("Unable to open input file") }
 
 	input := bufio.NewScanner(file)
@@ -137,11 +125,17 @@ func main() {
 
 				if shortestDistance <= lenShortestRoute || lenShortestRoute == -1 {
 					fmt.Printf("Finding shortest route from %v, %v towards %v, %v\n", players[p].x, players[p].y, opponents[o].x, opponents[o].y)
-					route := findRoute(players[p], opponents[o], grid)
-					if route == nil { continue }
+					route, routeFound := findRoute(players[p], opponents[o], grid)
+					if !routeFound { 
+						fmt.Println("Player is stuck in position")
+						continue
+					}
+					//fmt.Println("amount of steps required to reach: ", len(route))
 					if len(route) <= lenShortestRoute || lenShortestRoute == -1 {
 						routes = append(routes, route)
 						lenShortestRoute = len(route)
+					} else {
+						//fmt.Println("disregarding")
 					}
 				}
 			}				
@@ -155,20 +149,29 @@ func main() {
 
 			if len(routes) == 0 {
 				fmt.Println("No route found!")
-			}
-			if len(routes) > 0 {
-				for r := 0; r < len(routes); r++ {
-					fmt.Println("possible shortest routes:")
-					for rr := 0; rr < len(routes[r]); rr++ {
-						fmt.Printf("x: %v, y: %v\n", routes[r][rr].x, routes[r][rr].y)
+			} else {	
+				if len(routes[0]) == 0 {
+					fmt.Println("Player is standing next to opponent")
+				} else {
+					//fmt.Println("Player makes a step to opponent")
+					for r := 0; r < len(routes[0]); r++ {
+						//fmt.Printf("x: %v, y: %v\n", routes[0][r].x, routes[0][r].y)
 					}
+
+					oldX, oldY := players[p].x, players[p].y
+
+					fmt.Printf("Player moved towards x: %v, y: %v\n", routes[0][len(routes[0])-1].x, routes[0][len(routes[0])-1].y )
+					players[p].x = routes[0][len(routes[0])-1].x
+					players[p].y = routes[0][len(routes[0])-1].y
+
+					grid[players[p].y][players[p].x] = &players[p]
+					grid[oldY][oldX] = &object{ x: oldX, y: oldY, class: EMPTY }
+					
 				}
 			}
-
+			
 		}
 
-		return
-	
 	}
 
 	//fmt.Printf("Finding shortest route from %v, %v towards %v, %v\n", players[0].x, players[0].y, players[27].x, players[27].y)
@@ -179,7 +182,7 @@ func main() {
 
 
 
-func findRoute(startPosition object, targetPosition object, grid [][]*object) (route []coordinate) {
+func findRoute(startPosition object, targetPosition object, grid [][]*object) (route []coordinate, routeFound bool) {
 
 	startCoordinate := coordinate { x: startPosition.x, y: startPosition.y, priority: 0, stepsTaken: 0, stepsToGo: 0 }
 	endCoordinate := coordinate { x: targetPosition.x, y: targetPosition.y }
@@ -187,8 +190,6 @@ func findRoute(startPosition object, targetPosition object, grid [][]*object) (r
 	openList := []coordinate{}
 	openList = append(openList, startCoordinate)
 	closedList := make(map[int]map[int]coordinate)
-
-	routeFound := false
 
 	INFINITYLOOP:
 	for len(openList) > 0 {
@@ -267,10 +268,6 @@ func findRoute(startPosition object, targetPosition object, grid [][]*object) (r
 		
 	}
 
-	if routeFound {
-		return route
-	} 
-	
-	return nil
+	return route, routeFound
 
 }

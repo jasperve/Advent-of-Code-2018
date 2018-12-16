@@ -7,7 +7,7 @@ import (
 	"log"
 	"math"
 	"sort"
-	//"time"
+	"time"
 )
 
 const (
@@ -65,7 +65,7 @@ func main() {
 	grid := [][]*object{}
 	players := []object{}
 
-	file, err := os.Open("input.txt")
+	file, err := os.Open("input-test2.txt")
 	if err != nil { log.Fatalln("Unable to open input file") }
 
 	input := bufio.NewScanner(file)
@@ -96,9 +96,13 @@ func main() {
 
 	}
 
+	round := 0
+
 	//TODO : CREATE A LIST OF OPPONENTS SORTED BY LOCATION FROM FIGHTER
 	// While there are still Goblins and Elfs
 	for {
+
+		time.Sleep( 1 * time.Second)
 
 		for _, v := range grid {
 			for _, vi := range v {
@@ -119,7 +123,17 @@ func main() {
 		}
 		fmt.Println()
 		fmt.Println()
-		
+		fmt.Println("board after round ", round)
+		round++
+
+		for p := 0; p < len(players); p++ {
+			fmt.Println(players[p])
+		}
+
+		fmt.Println()
+		fmt.Println()
+
+		playerCanAttack := true
 
 		for p := 0; p < len(players); p++ {
 
@@ -131,11 +145,12 @@ func main() {
 				}
 			}				
 
-			for o := 0; o < len(opponents); o++ {
+			/*for o := 0; o < len(opponents); o++ {
 				opponents[o].opponent = &players[p]
 			}
 
 			sort.Sort(byDistance(opponents))
+			*/
 			
 			lenShortestRoute := -1
 			routes := [][]coordinate{}
@@ -145,22 +160,19 @@ func main() {
 				shortestDistance := int(math.Abs(float64(opponents[o].x-players[p].x))) + int(math.Abs(float64(opponents[o].y-players[p].y)))
 
 				if shortestDistance <= lenShortestRoute || lenShortestRoute == -1 {
-					//fmt.Printf("Finding shortest route from %v, %v towards %v, %v\n", players[p].x, players[p].y, opponents[o].x, opponents[o].y)
 					route, routeFound := findRoute(players[p], opponents[o], grid)
 					if !routeFound { 
-						//fmt.Println("Player is stuck in position")
+						// Player is stuck in his position with nowhere to move
 						continue
 					}
-					//fmt.Println("amount of steps required to reach: ", len(route))
 					if len(route) <= lenShortestRoute || lenShortestRoute == -1 {
 						routes = append(routes, route)
 						lenShortestRoute = len(route)
-					} else {
-						//fmt.Println("disregarding")
 					}
 				}
 			}				
 
+			// Remove all routes that were longer then the SHORTEST ROUTE found
 			for r := 0; r < len(routes); r++ {
 				if len(routes[r]) > lenShortestRoute { 
 					routes = append(routes[:r], routes[r+1:]...)
@@ -169,36 +181,77 @@ func main() {
 			}
 
 			if len(routes) == 0 {
-				//fmt.Println("No route found!")
+
+				// No route has been found towards any opponent and also NOT standing next to one
+			
 			} else {	
+
 				if len(routes[0]) == 0 {
-					//fmt.Println("Player is standing next to opponent")
+
+					// Player is standing next to AT LEAST 1 opponent
+					playerCanAttack = true
+
 				} else {
-					//fmt.Println("Player makes a step to opponent")
-					for r := 0; r < len(routes[0]); r++ {
-						//fmt.Printf("x: %v, y: %v\n", routes[0][r].x, routes[0][r].y)
-					}
 
+					// Player will make a move to another opponent
 					oldX, oldY := players[p].x, players[p].y
-
-					//fmt.Printf("Player moved towards x: %v, y: %v\n", routes[0][len(routes[0])-1].x, routes[0][len(routes[0])-1].y )
 					players[p].x = routes[0][len(routes[0])-1].x
 					players[p].y = routes[0][len(routes[0])-1].y
-
 					grid[players[p].y][players[p].x] = &players[p]
 					grid[oldY][oldX] = &object{ x: oldX, y: oldY, class: EMPTY }
 					
 				}
 			}
-			
+
+			if playerCanAttack {
+
+				YLOOP:
+				for y := -1; y <= 1; y++ {
+					for x := -1; x <= 1; x++ {
+						if (y == -1 && x == 0) || (y == 0 && (x == -1 || x == 1)) || (y == 1 && x == 0) {
+							if grid[players[p].y + y][players[p].x + x].class != players[p].class && (
+								grid[players[p].y + y][players[p].x + x].class == ELF || 
+								grid[players[p].y + y][players[p].x + x].class == GOBLIN) {
+
+									grid[players[p].y + y][players[p].x + x].hitPoints = grid[players[p].y + y][players[p].x + x].hitPoints - players[p].attackPower
+							
+									if grid[players[p].y + y][players[p].x + x].hitPoints < 0 {
+
+										indexRemovedPlayer := 0
+
+										for q := 0; q < len(players); q++ {
+											if players[q].y == players[p].y + y && players[q].x == players[p].x + 1 {
+												indexRemovedPlayer = q
+											}
+										}
+
+										//REMOVE THE PLAYER
+
+										players = append(players[:indexRemovedPlayer], players[indexRemovedPlayer+1:]...)
+
+										if indexRemovedPlayer <= p {
+											p--
+										}
+
+										grid[players[p].y + y][players[p].x + x] = &object{ x: x, y: y, class: EMPTY }
+
+									}
+									break YLOOP
+
+								}
+
+							}
+
+						}
+					}
+				}						
+
+			}
+
 		}
 	
 	}
-	//fmt.Printf("Finding shortest route from %v, %v towards %v, %v\n", players[0].x, players[0].y, players[27].x, players[27].y)
-	//findShortestRoute(players[0], players[27], grid)
 
-
-}
 
 
 
@@ -223,6 +276,7 @@ func findRoute(startPosition object, targetPosition object, grid [][]*object) (r
 		if _, ok := closedList[currentCoordinate.y]; !ok {
 			closedList[currentCoordinate.y] = make(map[int]coordinate)
 		}
+
 		closedList[currentCoordinate.y][currentCoordinate.x] = currentCoordinate
 
 		for y := -1; y <= 1; y++ {
@@ -247,14 +301,15 @@ func findRoute(startPosition object, targetPosition object, grid [][]*object) (r
 					}
 
 					// If the coordinate has already been marked as closed
-					if _, ok := closedList[currentCoordinate.y + y][currentCoordinate.x +x]; ok {
+					if _, ok := closedList[currentCoordinate.y + y][currentCoordinate.x + x]; ok {
+						//fmt.Println("found in closed list")
 						continue XLOOP
 					}
 
 					stepsToGo := int(math.Abs(float64((currentCoordinate.x+x)-endCoordinate.x))) + int(math.Abs(float64((currentCoordinate.y+y)-endCoordinate.y)))
 
 					for o := 0; o < len(openList); o++ {
-						if openList[o].x == x && openList[o].y == y {
+						if openList[o].x == currentCoordinate.x + x && openList[o].y == currentCoordinate.y + y {
 
 							// Check if this coordinate has been reached before with more steps. If so update the coordinate in the open list
 							if currentCoordinate.stepsTaken + stepsToGo < openList[o].stepsTaken + openList[o].stepsToGo {
@@ -284,8 +339,6 @@ func findRoute(startPosition object, targetPosition object, grid [][]*object) (r
 			}
 		}
 
-		//time.Sleep(time.Second)
-		
 	}
 
 	return route, routeFound

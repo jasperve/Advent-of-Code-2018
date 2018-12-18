@@ -9,6 +9,7 @@ import (
 	"image/color"
 	"image/png"
 	"os"
+	//"time"
 )
 
 const (
@@ -81,9 +82,9 @@ func main() {
 	fillWater(0, 500)
 	displayFlow()
 
-	/*for y := 201; y < 300; y++ {
+	/*for y := 1; y <= 100; y++ {
 		for x:= 450; x < 550; x++ {
-			if y == 201 && x == 500 { 
+			if y == 1 && x == 500 { 
 				fmt.Printf("&")
 				continue
 			}
@@ -99,6 +100,7 @@ func main() {
 // Returns true for obstruction found, false for clear path
 func fillWater(y int, x int) {
 
+	//maxY = 50
 	OUTER:
 	for y <= maxY {
 
@@ -109,9 +111,9 @@ func fillWater(y int, x int) {
 		} 
 
 		// If the SQUARE BELOW consists of SAND
-		if grid[y+1][x] == sand { 
+		if grid[y+1][x] == sand || grid[y+1][x] == water { 
 			y++
-		} else if grid[y+1][x] == clay || grid[y+1][x] == water {
+		} else if grid[y+1][x] == clay {
 
 			borderYLeft, borderYRight, border, borderXLeft, borderXRight := -1, -1, -1, -1, -1
 			
@@ -119,7 +121,7 @@ func fillWater(y int, x int) {
 			FINDLOOPLEFT:
 			for subY := y; subY >= minY; subY-- {
 				for subX := x; subX >= minX; subX-- {
-					if (grid[subY+1][subX] == sand && grid[subY+1][subX+1] == clay) {
+					if grid[subY][subX] != clay && grid[subY+1][subX] != clay && grid[subY][subX+1] != clay && grid[subY][subX-1] == sand && grid[subY+1][subX+1] == clay  {
 						borderYLeft = subY
 						borderXLeft = subX
 						break FINDLOOPLEFT
@@ -134,8 +136,7 @@ func fillWater(y int, x int) {
 			FINDLOOPRIGHT:
 			for subY := y; subY >= minY; subY-- {
 				for subX := x; subX <= maxX; subX++ {
-					if (grid[subY+1][subX] == sand && grid[subY+1][subX-1] == clay) {
-
+					if grid[subY][subX] != clay && grid[subY+1][subX] != clay && grid[subY][subX-1] != clay && grid[subY][subX+1] == sand && grid[subY+1][subX-1] == clay  {
 						borderYRight = subY
 						borderXRight = subX
 						break FINDLOOPRIGHT
@@ -155,47 +156,47 @@ func fillWater(y int, x int) {
 				border = borderYRight 
 			} 
 			
-			fmt.Println("fill to level", border)
-
 			// FILL LEFT SIDE TO MAX LEVEL
 			FILLLOOPLEFT:
 			for subY := y; subY >= border; subY-- {
 				for subX := x; subX >= minX; subX-- {
-					if (grid[subY+1][subX] == sand && grid[subY+1][subX+1] == clay) {
+					if grid[subY][subX] != clay && grid[subY+1][subX] != clay && grid[subY][subX-1] == sand && grid[subY][subX+1] != clay && grid[subY+1][subX+1] == clay  {
 						break FILLLOOPLEFT
 					}
 
-					fmt.Println("filling", subY, ",", subX, "with water")
-					grid[subY][subX] = water
-					
-					if grid[subY][subX-1] == clay || grid[subY][subX-1] == water {
+					if grid[subY][subX] == clay {
 						break
 					}
+					
+					fmt.Println("filling", subY, ",", subX, "with water")
+					grid[subY][subX] = water
+										
 				}
 			}
 
 			// FILL RIGHT SIDE TO MAX LEVEL
 			FILLLOOPRIGHT:
 			for subY := y; subY >= border; subY-- {
-				for subX := x; subX <= maxX; subX++ {
+				for subX := x; subX < maxX; subX++ {
 					if (grid[subY+1][subX] == sand && grid[subY+1][subX-1] == clay) {
 						break FILLLOOPRIGHT
 					}
 
-					fmt.Println("filling", subY, ",", subX, "with water")
-					grid[subY][subX] = water
-
-					if grid[subY][subX+1] == clay || grid[subY][subX+1] ==  water {
+					if grid[subY][subX] == clay {
 						break
 					}
+
+					fmt.Println("filling", subY, ",", subX, "with water")
+					grid[subY][subX] = water
+					
 				}
 			}
 
+			
 			/*if borderYLeft == borderYRight {
 				fillWater(border, borderXLeft)
 				fillWater(border, borderXRight)
-			} else*/ 
-			if borderYLeft >= borderYRight {
+			} else */if borderYLeft >= borderYRight {
 				fillWater(border, borderXLeft)
 			} else if borderYRight > borderYLeft {
 				fillWater(border, borderXRight)

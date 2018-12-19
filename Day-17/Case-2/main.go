@@ -17,6 +17,7 @@ const (
 	sand = 0
 	clay = 1
 	water = 2
+	temp = 3
 
 	up = 0
 	left = 1
@@ -101,14 +102,16 @@ func main() {
 // Returns true for obstruction found, false for clear path
 func fillWater(y int, x int) {
 
+	//grid[y][x] = water
+
 	//maxY = 50
 	OUTER:
 	for y <= maxY {
 
 		// If the CURRENT SQUARE consists of SAND
-		if grid[y][x] == sand  {
-			grid[y][x] = water
-		} 
+		//if grid[y][x] == sand  {
+			//grid[y][x] = waterf
+		//} 
 
 		// If the SQUARE BELOW consists of SAND
 		if grid[y+1][x] == sand || grid[y+1][x] == water { 
@@ -121,7 +124,7 @@ func fillWater(y int, x int) {
 			FINDLOOPLEFT:
 			for subY := y; subY >= minY; subY-- {
 				for subX := x-1; subX >= minX; subX-- {
-					if grid[subY][subX] != clay && grid[subY+1][subX] != clay && grid[subY][subX+1] != clay && grid[subY][subX-1] == sand && grid[subY+1][subX+1] == clay  {
+					if grid[subY][subX] != clay && grid[subY+1][subX] != clay && grid[subY][subX+1] != clay && grid[subY][subX-1] != clay && grid[subY+1][subX+1] == clay  {
 						borderYLeft = subY
 						borderXLeft = subX
 						break FINDLOOPLEFT
@@ -135,7 +138,7 @@ func fillWater(y int, x int) {
 			FINDLOOPRIGHT:
 			for subY := y; subY >= minY; subY-- {
 				for subX := x+1; subX <= maxX; subX++ {
-					if grid[subY][subX] != clay && grid[subY+1][subX] != clay && grid[subY][subX-1] != clay && grid[subY][subX+1] == sand && grid[subY+1][subX-1] == clay  {
+					if grid[subY][subX] != clay && grid[subY+1][subX] != clay && grid[subY][subX-1] != clay && grid[subY][subX+1] != clay && grid[subY+1][subX-1] == clay  {
 						borderYRight = subY
 						borderXRight = subX
 						break FINDLOOPRIGHT
@@ -154,47 +157,41 @@ func fillWater(y int, x int) {
 			} 
 						
 			// FILL LEFT SIDE TO MAX LEVEL
-			FILLLOOPLEFT:
-			for subY := y; subY >= border; subY-- {
+			for subY := y; subY >= border+1; subY-- {
 				for subX := x; subX >= minX; subX-- {
-
-					if subX != x && grid[subY][subX] != clay && grid[subY+1][subX] != clay && grid[subY][subX+1] != clay && grid[subY][subX-1] == sand && grid[subY+1][subX+1] == clay  {
-						break FILLLOOPLEFT
-					} 
-					
 					grid[subY][subX] = water
-					
-					if grid[subY][subX-1] == clay {
-						break
-					}
+					if grid[subY][subX-1] == clay {	break }
 										
 				}
 			}
 
 			// FILL RIGHT SIDE TO MAX LEVEL
-			FILLLOOPRIGHT:
-			for subY := y; subY >= border; subY-- {
+			for subY := y; subY >= border+1; subY-- {
 				for subX := x; subX < maxX; subX++ {
-
-					if subX != x && grid[subY][subX] != clay && grid[subY+1][subX] != clay && grid[subY][subX-1] != clay && grid[subY][subX+1] == sand && grid[subY+1][subX-1] == clay  {
-						break FILLLOOPRIGHT
-					}
-
 					grid[subY][subX] = water
-
-					if grid[subY][subX+1] == clay {
-						break
-					}
-
+					if grid[subY][subX+1] == clay {	break }
 				}
 			}
-			
+
 			if borderYLeft == borderYRight {
-				if grid[border][borderXLeft] != water { fillWater(border, borderXLeft) }
-				if grid[border][borderXRight] != water { fillWater(border, borderXRight) }
+				if grid[border][borderXLeft] == sand { grid[border][borderXLeft] = temp }
+				if grid[border][borderXRight] == sand { grid[border][borderXLeft] = temp }
+			}
+
+			if borderYLeft == borderYRight {
+				if grid[border][borderXLeft] == temp { 
+					grid[border][borderXLeft] = water
+					fillWater(border, borderXLeft) 
+				}
+				if grid[border][borderXRight] == temp { 
+					grid[border][borderXRight] = water
+					fillWater(border, borderXRight) 
+				}
 			} else if borderYLeft >= borderYRight {
-				fillWater(border, borderXLeft)
+				//grid[border][borderXLeft] = water
+				fillWater(border, borderXLeft) 
 			} else if borderYRight > borderYLeft {
+				//grid[border][borderXRight] = water
 				fillWater(border, borderXRight)
 			}
 			

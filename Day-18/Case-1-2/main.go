@@ -93,11 +93,7 @@ func main() {
 			for x := 0; x < len(grid[y]); x++ {
 				if grid[y][x] == lumberyard { totalNumLumberyard++ }
 				if grid[y][x] == trees { totalNumTrees++ }
-		/*		if grid[y][x] == lumberyard { fmt.Printf("#") }
-				if grid[y][x] == trees { fmt.Printf("|") }
-				if grid[y][x] == open { fmt.Printf(".") }*/
 			}
-			//fmt.Printf("\n")
 		}
 	
 		result := totalNumLumberyard * totalNumTrees

@@ -45,9 +45,12 @@ func main() {
 
 	register := [6]int{1,0,0,0,0,0}
 
-	for ipValue >= 0 && ipValue < len(instructions) {
+	for ipValue < len(instructions) {
 		
 		register[ipRegister] = ipValue
+
+		//fmt.Println("before:", register)
+		fmt.Println("instruction:", instructions[ipValue])
 
 		switch instructions[ipValue].optcode {
 		case "addr":
@@ -84,12 +87,15 @@ func main() {
 			register = eqrr(register, instructions[ipValue].inputA, instructions[ipValue].inputB, instructions[ipValue].outputC)
 		}
 
-		/*if(register[0] != 0) {
-			fmt.Println(register[0])
-		}*/
-
 		ipValue = register[ipRegister]
 		ipValue++
+		
+
+		//fmt.Println("after:", register)
+		//fmt.Println("ipvalue", ipValue)
+		//fmt.Println()
+		//fmt.Println()
+
 
 	}
 

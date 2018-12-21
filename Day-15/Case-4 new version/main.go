@@ -76,6 +76,23 @@ func (c byPriority) Less(i, j int) bool {
 	return c[i].priority < c[j].priority
 }
 
+type byLenAndEndPoint [][]coordinate
+func (c byLenAndEndPoint) Len() int {
+	return len(c)
+}
+func (c byLenAndEndPoint) Swap(i, j int) {
+	c[i], c[j] = c[j], c[i]
+}
+func (c byLenAndEndPoint) Less(i, j int) bool {
+	if len(c[i]) < len(c[j]) { 
+		return true
+	} else if len(c[i]) == len(c[j]) && (c[i][len(c[i])-1].y < c[j][len(c[j])-1].y || (c[i][len(c[i])-1].y == c[j][len(c[j])-1].y && c[i][len(c[i])-1].x < c[j][len(c[j])-1].x)) {
+		return true
+	} else {
+		return false
+	}
+}
+
 type byLenAndBeginPoint [][]coordinate
 func (c byLenAndBeginPoint) Len() int {
 	return len(c)
@@ -98,7 +115,7 @@ var objects map[int]map[int]object
 func main() {
 
 	grid := [][]object{}
-	players := []player{}
+	playersOriginal := []player{}
 	
 	file, err := os.Open("input.txt")
 	if err != nil { log.Fatalln("Unable to open input file") }
@@ -117,10 +134,10 @@ func main() {
 				newObject.class = wall
 			case 69:
 				newPlayer := player{ x: x, y: y, class: elf, attackPower: 3, hitPoints: 200 }
-				players = append(players, newPlayer)
+				playersOriginal = append(playersOriginal, newPlayer)
 			case 71:
 				newPlayer := player{ x: x, y: y, class: goblin, attackPower: 3, hitPoints: 200 }
-				players = append(players, newPlayer)
+				playersOriginal = append(playersOriginal, newPlayer)
 			}
 
 			row = append(row, newObject)
@@ -130,124 +147,156 @@ func main() {
 
 	}
 
-	round := 0
+	attackPower := 3
 
 	//TODO : CREATE A LIST OF OPPONENTS SORTED BY LOCATION FROM FIGHTER
 	// While there are still Goblins and Elfs
 	for {
 
-		PLAYERSLOOP:
-		for p := 0; p < len(players); p++ {
+		attackPower++
 
-			opponents := make([]player, len(players))
-			copy(opponents, players)
-			sort.Sort(byXY(opponents))
+		players := make([]player, len(playersOriginal))
+		
+		for p := 0; p < len(playersOriginal); p++ {
+			if playersOriginal[p].class == elf {
+				playersOriginal[p].attackPower++
+			}
+		}
+		
+		fmt.Println("increasing attack power to", attackPower)
 
-			routes := [][]coordinate{}
-			nextToOpponent := false
+		copy(players, playersOriginal)
 
-			RANGELOOP:
-			for y := -1; y <= 1; y++ {
-				for x := -1; x <= 1; x++ {
-					if (y == -1 && x == 0) || (y == 0 && (x == -1 || x == 1)) || (y == 1 && x == 0) {
+		round := 0
 
-						startCoordinate := coordinate { x: players[p].x+x, y: players[p].y+y, priority: 0, stepsTaken: 0, stepsToGo: 0 }
-						var shortestRoute []coordinate
+		OUTER:
+		for {
 
-						OPPONENTSLOOP:
-						for o := 0; o < len(opponents); o++ {
+			PLAYERSLOOP:
+			for p := 0; p < len(players); p++ {
 
-							if opponents[o].class == players[p].class { continue OPPONENTSLOOP }
-							
-							if opponents[o].x == players[p].x+x && opponents[o].y == players[p].y+y { 
-								nextToOpponent = true
-								break RANGELOOP	
-							}
+				opponents := make([]player, len(players))
+				copy(opponents, players)
+				sort.Sort(byXY(opponents))
 
-							// Calculate the MANHATTAN DISTANCE towards OPPONENT. If longer then SHORTEST ROUTE -> CONTINUE with NEXT OPPONENT
-							shortestDistance := int(math.Abs(float64(opponents[o].x-players[p].x + x))) + int(math.Abs(float64(opponents[o].y-players[p].y + y)))
-							if shortestRoute == nil || shortestDistance <= len(shortestRoute) + 10 {
+				routes := [][]coordinate{}
+				nextToOpponent := false
+
+				RANGELOOP:
+				for y := -1; y <= 1; y++ {
+					for x := -1; x <= 1; x++ {
+						if (y == -1 && x == 0) || (y == 0 && (x == -1 || x == 1)) || (y == 1 && x == 0) {
+
+							startCoordinate := coordinate { x: players[p].x+x, y: players[p].y+y, priority: 0, stepsTaken: 0, stepsToGo: 0 }
+							var shortestRoute []coordinate
+
+							OPPONENTSLOOP:
+							for o := 0; o < len(opponents); o++ {
+
+								if opponents[o].class == players[p].class { continue OPPONENTSLOOP }
 								
-								targetCoordinate := coordinate { x: opponents[o].x, y: opponents[o].y }
-
-								// Start to FIND a ROUTE towards this OPPONENT
-								route := findRoute(startCoordinate, targetCoordinate, grid, players)
-
-								/*fmt.Println("from y: ", players[p].y+y, ",x:", players[p].x+x, " VV ")
-								for t:= 0; t < len(route); t++ {
-									fmt.Println(route[t].y, route[t].x)
-								}*/
-
-								// NO ROUTE has been found towards this OPPONENT
-								if route == nil { continue OPPONENTSLOOP }
-
-								// If this is the SHORTEST ROUTE found so far OR the FIRST ROUTE found so far -> UPDATE shortestRoute
-								if shortestRoute == nil || len(route) <= len(shortestRoute) {
-									shortestRoute = route
+								if opponents[o].x == players[p].x+x && opponents[o].y == players[p].y+y { 
+									nextToOpponent = true
+									break RANGELOOP	
 								}
 
+								// Calculate the MANHATTAN DISTANCE towards OPPONENT. If longer then SHORTEST ROUTE -> CONTINUE with NEXT OPPONENT
+								shortestDistance := int(math.Abs(float64(opponents[o].x-players[p].x + x))) + int(math.Abs(float64(opponents[o].y-players[p].y + y)))
+								if shortestRoute == nil || shortestDistance <= len(shortestRoute) + 10 {
+									
+									targetCoordinate := coordinate { x: opponents[o].x, y: opponents[o].y }
+
+									// Start to FIND a ROUTE towards this OPPONENT
+									route := findRoute(startCoordinate, targetCoordinate, grid, players)
+
+									/*fmt.Println("from y: ", players[p].y+y, ",x:", players[p].x+x, " VV ")
+									for t:= 0; t < len(route); t++ {
+										fmt.Println(route[t].y, route[t].x)
+									}*/
+
+									// NO ROUTE has been found towards this OPPONENT
+									if route == nil { continue OPPONENTSLOOP }
+
+									// If this is the SHORTEST ROUTE found so far OR the FIRST ROUTE found so far -> UPDATE shortestRoute
+									if shortestRoute == nil || len(route) <= len(shortestRoute) {
+										shortestRoute = route
+									}
+
+								}
 							}
-						}
 
-						if shortestRoute != nil {
-							shortestRoute = append([]coordinate { startCoordinate }, shortestRoute...)
-							routes = append(routes, shortestRoute)
+							if shortestRoute != nil {
+								shortestRoute = append([]coordinate { startCoordinate }, shortestRoute...)
+								routes = append(routes, shortestRoute)
+							}
+						
 						}
+					}
+				}
+
+				// If no ROUTE has been found towards ANY OPPONENT and PLAYER is also NOT STANDING NEXT TO AN OPPONENT
+				if !nextToOpponent && len(routes) != 0 { //continue PLAYERSLOOP }
+
+					sort.Sort(byLenAndEndPoint(routes))
+
+					for r := len(routes)-1; r >= 0; r-- {
+						if routes[r][len(routes[r])-1].y != routes[0][len(routes[0])-1].y && routes[r][len(routes[r])-1].x != routes[0][len(routes[0])-1].x {
+							routes = append(routes[:r], routes[r+1:]...)
+						}
+					}
+
+					sort.Sort(byLenAndBeginPoint(routes))
+
+					//printBoard(grid, players, routes[0])
+					//bufio.NewReader(os.Stdin).ReadBytes('\n') 
+
+					players[p].x = routes[0][0].x
+					players[p].y = routes[0][0].y
+
+				}
+
+				// IF PLAYER can attack -> CALL ATTACK FUNCTION -> IF RETURNED INDEX is -1 NO PLAYER was KILLED / IF RETURNED INDEX != -1 a PLAYER was KILLED and INDEX should be AMENDED
+				if nextToOpponent == true || (len(routes) > 0 && len(routes[0]) == 1) {
+
+					indexKilledPlayer := attackPlayer(players[p], &players) 
 					
+					if indexKilledPlayer == -2 { 
+						break OUTER 
+					} else if indexKilledPlayer != -1 {
+						if indexKilledPlayer <= p { p-- }
 					}
-				}
-			}
 
-			// If no ROUTE has been found towards ANY OPPONENT and PLAYER is also NOT STANDING NEXT TO AN OPPONENT
-			if !nextToOpponent && len(routes) != 0 { //continue PLAYERSLOOP }
+					elfsFound := false
+					goblinsFound := false
 
-				sort.Sort(byLenAndBeginPoint(routes))
-
-				//printBoard(grid, players, routes[0])
-				//bufio.NewReader(os.Stdin).ReadBytes('\n') 
-
-				players[p].x = routes[0][0].x
-				players[p].y = routes[0][0].y
-
-			}
-
-			// IF PLAYER can attack -> CALL ATTACK FUNCTION -> IF RETURNED INDEX is -1 NO PLAYER was KILLED / IF RETURNED INDEX != -1 a PLAYER was KILLED and INDEX should be AMENDED
-			if nextToOpponent == true || (len(routes) > 0 && len(routes[0]) == 1) {
-
-				if indexKilledPlayer := attackPlayer(players[p], &players); indexKilledPlayer != -1 {
-					if indexKilledPlayer <= p { p-- }
-				}
-
-				elfsFound := false
-				goblinsFound := false
-
-				totalHitPointsLeft := 0
-					for m := 0; m < len(players); m++ {
-					if players[m].class == elf { elfsFound = true }
-					if players[m].class == goblin { goblinsFound = true }
-					totalHitPointsLeft += players[m].hitPoints
-				}
-			
-				if !elfsFound || !goblinsFound {
-					if p == len(players) - 1 {
-						round++
+					totalHitPointsLeft := 0
+						for m := 0; m < len(players); m++ {
+						if players[m].class == elf { elfsFound = true }
+						if players[m].class == goblin { goblinsFound = true }
+						totalHitPointsLeft += players[m].hitPoints
 					}
-					fmt.Println("vv Board after round", round, "vv")
-					fmt.Println("hitpoints left", totalHitPointsLeft)
-					fmt.Println("fot a total of", totalHitPointsLeft * round)
-					return
+				
+					if !elfsFound || !goblinsFound {
+						if p == len(players) - 1 {
+							round++
+						}
+						fmt.Println("vv Board after round", round, "vv")
+						fmt.Println("hitpoints left", totalHitPointsLeft)
+						fmt.Println("fot a total of", totalHitPointsLeft * round)
+						return
+					}
+
+					continue PLAYERSLOOP
+
 				}
 
-				continue PLAYERSLOOP
 
 			}
 
+			sort.Sort(byXY(players))
+			round++
 
 		}
-
-		sort.Sort(byXY(players))
-		round++
-
 	}
 	
 }
@@ -382,7 +431,8 @@ func attackPlayer(attacker player, players *[]player) int {
 				if (*players)[p].hitPoints < 0 {
 
 					if (*players)[p].class == elf {
-						fmt.Println("AN ELF JUST DIED!")
+						fmt.Println("A ELF JUST DIED")
+						return -2
 					}
 					*players = append((*players)[:p], (*players)[p+1:]...)
 					return p

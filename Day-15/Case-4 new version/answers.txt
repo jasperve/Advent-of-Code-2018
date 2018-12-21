@@ -1,0 +1,6 @@
+E:\Projects\Advent-of-Code-2018\Day-15\Case-4 new version>go run main.go
+vv Board after round 46 vv
+hitpoints left 1373
+fot a total of 63158
+
+That's not the right answer; your answer is too low. If you're stuck, there are some general tips on the about page, or you can ask for hints on the subreddit. Please wait one minute before trying again. (You guessed 63158.) [Return to Day 15]

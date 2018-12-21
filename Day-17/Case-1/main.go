@@ -83,17 +83,46 @@ func main() {
 
 	// Start filling the grid with water
 	fillWater(minY, 500)
-	displayFlow()
-
-	counter := 0
+	
+	whileFlowingCounter := 0
 
 	for y := minY; y <= maxY; y++ {
-		for x:= minX; x < maxX; x++ {
-			if grid[y][x] == water { counter++ }
+		for x := minX; x <= maxX; x++ {
+			if grid[y][x] == water { whileFlowingCounter++ }
 		}
 	}
 
-	fmt.Println(counter)
+	for y := minY; y <= maxY; y++ {
+		for x := minX; x <= maxX; x++ {
+			if grid[y][x] == water && (x == minX || x == maxX) {
+				grid[y][x] = sand
+			}
+			if grid[y][x] == water && (grid[y][x-1] == sand || grid[y][x+1] == sand) {
+				grid[y][x] = sand
+			}
+		}
+		for x := maxX; x >= minX; x-- {
+			if grid[y][x] == water && (x == minX || x == maxX) {
+				grid[y][x] = sand
+			}
+			if grid[y][x] == water && (grid[y][x-1] == sand || grid[y][x+1] == sand) {
+				grid[y][x] = sand
+			}
+		}
+	}
+
+	afterFlowingCounter := 0
+
+	for y := minY; y <= maxY; y++ {
+		for x := minX; x <= maxX; x++ {
+			if grid[y][x] == water { afterFlowingCounter++ }
+		}
+	}
+
+	fmt.Println("While the well is flowing:", whileFlowingCounter)
+	fmt.Println("After the well has stopped flowing:", afterFlowingCounter)
+
+	displayFlow()
 
 }
 

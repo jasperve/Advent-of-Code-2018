@@ -14,11 +14,12 @@ type instruction struct {
 	outputC int
 }
 
-var instructionPointer = 1
+var ipRegister = 1
+var ipValue = 0
 
 func main() {
 
-	instructionRegex := regexp.MustCompile("([^ ]*)\\s(\\d*)\\s(\\d*)\\s(\\d*)")
+	instructionRegex := regexp.MustCompile("([^ ]*)\\s(\\d*)\\s(\\d*)\\s(\\d*)\\r\\n?|\\n")
 	
 	instructions := []instruction{}
 
@@ -41,144 +42,193 @@ func main() {
 		instructions = append(instructions, newInstruction)
 	}
 	
-	fmt.Println(instructions[0].optcode)
 
+	register := [6]int{1,0,0,0,0,0}
+
+	for ipValue >= 0 && ipValue < len(instructions) {
+		
+		register[ipRegister] = ipValue
+
+		switch instructions[ipValue].optcode {
+		case "addr":
+			register = addr(register, instructions[ipValue].inputA, instructions[ipValue].inputB, instructions[ipValue].outputC)
+		case "addi":
+			register = addi(register, instructions[ipValue].inputA, instructions[ipValue].inputB, instructions[ipValue].outputC)
+		case "mulr":
+			register = mulr(register, instructions[ipValue].inputA, instructions[ipValue].inputB, instructions[ipValue].outputC)
+		case "muli":
+			register = muli(register, instructions[ipValue].inputA, instructions[ipValue].inputB, instructions[ipValue].outputC)
+		case "banr":
+			register = banr(register, instructions[ipValue].inputA, instructions[ipValue].inputB, instructions[ipValue].outputC)
+		case "bani":
+			register = bani(register, instructions[ipValue].inputA, instructions[ipValue].inputB, instructions[ipValue].outputC)
+		case "borr":
+			register = borr(register, instructions[ipValue].inputA, instructions[ipValue].inputB, instructions[ipValue].outputC)
+		case "bori":
+			register = bori(register, instructions[ipValue].inputA, instructions[ipValue].inputB, instructions[ipValue].outputC)
+		case "setr":
+			register = setr(register, instructions[ipValue].inputA, instructions[ipValue].inputB, instructions[ipValue].outputC)
+		case "seti":
+			register = seti(register, instructions[ipValue].inputA, instructions[ipValue].inputB, instructions[ipValue].outputC)
+		case "gtir":
+			register = gtir(register, instructions[ipValue].inputA, instructions[ipValue].inputB, instructions[ipValue].outputC)
+		case "gtri":
+			register = gtri(register, instructions[ipValue].inputA, instructions[ipValue].inputB, instructions[ipValue].outputC)
+		case "gtrr":
+			register = gtrr(register, instructions[ipValue].inputA, instructions[ipValue].inputB, instructions[ipValue].outputC)
+		case "eqir":
+			register = eqir(register, instructions[ipValue].inputA, instructions[ipValue].inputB, instructions[ipValue].outputC)
+		case "eqri":
+			register = eqri(register, instructions[ipValue].inputA, instructions[ipValue].inputB, instructions[ipValue].outputC)
+		case "eqrr":
+			register = eqrr(register, instructions[ipValue].inputA, instructions[ipValue].inputB, instructions[ipValue].outputC)
+		}
+
+		/*if(register[0] != 0) {
+			fmt.Println(register[0])
+		}*/
+
+		ipValue = register[ipRegister]
+		ipValue++
+
+	}
+
+	fmt.Println(register)
 
 }
 
 
 // addr (add register) stores into register C the result of adding register A and register B.
-func addr(register [4]int, instruction [4]int) (result [4]int) {
-	register[instruction[3]] = register[instruction[1]] + register[instruction[2]]
+func addr(register [6]int, inputA int, inputB int, outputC int) [6]int {
+	register[outputC] = register[inputA] + register[inputB]
 	return register	
 } 
 
 
 // addi (add immediate) stores into register C the result of adding register A and value B.
-func addi(register [4]int, instruction [4]int) (result [4]int) {
-	register[instruction[3]] = register[instruction[1]] + instruction[2]
+func addi(register [6]int, inputA int, inputB int, outputC int) [6]int {
+	register[outputC] = register[inputA] + inputB
 	return register
-
 } 
 
 
 // mulr (multiply register) stores into register C the result of multiplying register A and register B.
-func mulr(register [4]int, instruction [4]int) (result [4]int) {
-	register[instruction[3]] = register[instruction[1]] * register[instruction[2]]
+func mulr(register [6]int, inputA int, inputB int, outputC int) [6]int {
+	register[outputC] = register[inputA] * register[inputB]
 	return register
 } 
 
 
 // muli (multiply immediate) stores into register C the result of multiplying register A and value B.
-func muli(register [4]int, instruction [4]int) (result [4]int) {
-	register[instruction[3]] = register[instruction[1]] * instruction[2]
+func muli(register [6]int, inputA int, inputB int, outputC int) [6]int {
+	register[outputC] = register[inputA] * inputB
 	return register
 } 
 
 
 // banr (bitwise AND register) stores into register C the result of the bitwise AND of register A and register B.
-func banr(register [4]int, instruction [4]int) (result [4]int) {
-	register[instruction[3]] = register[instruction[1]] & register[instruction[2]]
+func banr(register [6]int, inputA int, inputB int, outputC int) [6]int {
+	register[outputC] = register[inputA] & register[inputB]
 	return register
 } 
 
 
 // bani (bitwise AND immediate) stores into register C the result of the bitwise AND of register A and value B.
-func bani(register [4]int, instruction [4]int) (result [4]int) {
-	register[instruction[3]] = register[instruction[1]] & instruction[2]
+func bani(register [6]int, inputA int, inputB int, outputC int) [6]int {
+	register[outputC] = register[inputA] & inputB
 	return register
 } 
 
 
 // borr (bitwise OR register) stores into register C the result of the bitwise OR of register A and register B.
-func borr(register [4]int, instruction [4]int) (result [4]int) {
-	register[instruction[3]] = register[instruction[1]] | register[instruction[2]]
+func borr(register [6]int, inputA int, inputB int, outputC int) [6]int {
+	register[outputC] = register[inputA] | register[inputB]
 	return register
 } 
 
 
 // bori (bitwise OR immediate) stores into register C the result of the bitwise OR of register A and value B.
-func bori(register [4]int, instruction [4]int) (result [4]int) {
-	register[instruction[3]] = register[instruction[1]] | instruction[2]
+func bori(register [6]int, inputA int, inputB int, outputC int) [6]int {
+	register[outputC] = register[inputA] | inputB
 	return register
 } 
 
 
 // setr (set register) copies the contents of register A into register C. (Input B is ignored.)
-func setr(register [4]int, instruction [4]int) (result [4]int) {
-	register[instruction[3]] = register[instruction[1]]
+func setr(register [6]int, inputA int, inputB int, outputC int) [6]int {
+	register[outputC] = register[inputA]
 	return register
 } 
 
 
 // seti (set immediate) stores value A into register C. (Input B is ignored.)
-func seti(register [4]int, instruction [4]int) (result [4]int) {
-	register[instruction[3]] = instruction[1]
+func seti(register [6]int, inputA int, inputB int, outputC int) [6]int {
+	register[outputC] = inputA
 	return register
 } 
 
 
 // gtir (greater-than immediate/register) sets register C to 1 if value A is greater than register B. Otherwise, register C is set to 0.
-func gtir(register [4]int, instruction [4]int) (result [4]int) {
-	if instruction[1] > register[instruction[2]] { 
-		register[instruction[3]] = 1
+func gtir(register [6]int, inputA int, inputB int, outputC int) [6]int {
+	if inputA > register[inputB] { 
+		register[outputC] = 1
 	} else {
-		register[instruction[3]] = 0
+		register[outputC] = 0
 	}
 	return register
 } 
 
 
 // gtri (greater-than register/immediate) sets register C to 1 if register A is greater than value B. Otherwise, register C is set to 0.
-func gtri(register [4]int, instruction [4]int) (result [4]int) {
-	if register[instruction[1]] > instruction[2] { 
-		register[instruction[3]] = 1
+func gtri(register [6]int, inputA int, inputB int, outputC int) [6]int {
+	if register[inputA] > inputB { 
+		register[outputC] = 1
 	} else {
-		register[instruction[3]] = 0
+		register[outputC] = 0
 	}
 	return register
 } 
 
 
 // gtrr (greater-than register/register) sets register C to 1 if register A is greater than register B. Otherwise, register C is set to 0.
-func gtrr(register [4]int, instruction [4]int) (result [4]int) {
-	if register[instruction[1]] > register[instruction[2]] { 
-		register[instruction[3]] = 1
+func gtrr(register [6]int, inputA int, inputB int, outputC int) [6]int {
+	if register[inputA] > register[inputB] { 
+		register[outputC] = 1
 	} else {
-		register[instruction[3]] = 0
+		register[outputC] = 0
 	}
 	return register
 } 
 
 
 // eqir (equal immediate/register) sets register C to 1 if value A is equal to register B. Otherwise, register C is set to 0.
-func eqir(register [4]int, instruction [4]int) (result [4]int) {
-	if instruction[1] == register[instruction[2]] { 
-		register[instruction[3]] = 1
+func eqir(register [6]int, inputA int, inputB int, outputC int) [6]int {
+	if inputA == register[inputB] { 
+		register[outputC] = 1
 	} else {
-		register[instruction[3]] = 0
+		register[outputC] = 0
 	}
 	return register
 } 
 
 
 // eqri (equal register/immediate) sets register C to 1 if register A is equal to value B. Otherwise, register C is set to 0.
-func eqri(register [4]int, instruction [4]int) (result [4]int) {
-	if register[instruction[1]] == instruction[2] { 
-		register[instruction[3]] = 1
+func eqri(register [6]int, inputA int, inputB int, outputC int) [6]int {
+	if register[inputA] == inputB { 
+		register[outputC] = 1
 	} else {
-		register[instruction[3]] = 0
+		register[outputC] = 0
 	}
 	return register
 } 
 
 
 // eqrr (equal register/register) sets register C to 1 if register A is equal to register B. Otherwise, register C is set to 0.
-func eqrr(register [4]int, instruction [4]int) (result [4]int) {
-	if register[instruction[1]] == register[instruction[2]] { 
-		register[instruction[3]] = 1
+func eqrr(register [6]int, inputA int, inputB int, outputC int) [6]int {
+	if register[inputA] == register[inputB] { 
+		register[outputC] = 1
 	} else {
-		register[instruction[3]] = 0
+		register[outputC] = 0
 	}
 	return register
 }

@@ -7,13 +7,15 @@ import (
 	"log"
 	"math"
 	"sort"
+	"github.com/fatih/color"
+//	"time"
 )
 
 const (
-	EMPTY = 0
-	WALL = 1
-	ELF = 2
-	GOBLIN = 3
+	empty = 0
+	wall = 1
+	elf = 2
+	goblin = 3
 )
 
 type player struct {
@@ -74,18 +76,18 @@ func (c byPriority) Less(i, j int) bool {
 	return c[i].priority < c[j].priority
 }
 
-type byEndPointRoute [][]coordinate
-func (c byEndPointRoute) Len() int {
+type byLenAndBeginPoint [][]coordinate
+func (c byLenAndBeginPoint) Len() int {
 	return len(c)
 }
-func (c byEndPointRoute) Swap(i, j int) {
+func (c byLenAndBeginPoint) Swap(i, j int) {
 	c[i], c[j] = c[j], c[i]
 }
-func (c byEndPointRoute) Less(i, j int) bool {
-	if len(c[i]) < len(c[j]) || len(c[i]) == 0 {
+func (c byLenAndBeginPoint) Less(i, j int) bool {
+	if len(c[i]) < len(c[j]) { 
 		return true
-	} else if len(c[i]) == len(c[j]) && len(c[j]) > 0 {
-		return c[i][0].y < c[j][0].y || (c[i][0].y == c[j][0].y && c[i][0].x < c[j][0].x)
+	} else if len(c[i]) == len(c[j]) && (c[i][0].y < c[j][0].y || (c[i][0].y == c[j][0].y && c[i][0].x < c[j][0].x)) {
+		return true
 	} else {
 		return false
 	}
@@ -108,16 +110,16 @@ func main() {
 	
 		for x, u := range input.Text() {
 			
-			newObject := object{ x: x, y: y, class: EMPTY }
+			newObject := object{ x: x, y: y, class: empty }
 			
 			switch u {
 			case 35:
-				newObject.class = WALL
+				newObject.class = wall
 			case 69:
-				newPlayer := player{ x: x, y: y, class: ELF, attackPower: 3, hitPoints: 200 }
+				newPlayer := player{ x: x, y: y, class: elf, attackPower: 3, hitPoints: 200 }
 				players = append(players, newPlayer)
 			case 71:
-				newPlayer := player{ x: x, y: y, class: GOBLIN, attackPower: 3, hitPoints: 200 }
+				newPlayer := player{ x: x, y: y, class: goblin, attackPower: 3, hitPoints: 200 }
 				players = append(players, newPlayer)
 			}
 
@@ -134,8 +136,6 @@ func main() {
 	// While there are still Goblins and Elfs
 	for {
 
-		playerCanAttack := true
-
 		PLAYERSLOOP:
 		for p := 0; p < len(players); p++ {
 
@@ -143,89 +143,108 @@ func main() {
 			copy(opponents, players)
 			sort.Sort(byXY(opponents))
 
-			lenShortestRoute := -1
 			routes := [][]coordinate{}
+			nextToOpponent := false
 
-			OPPONENTSLOOP:
-			for o := 0; o < len(opponents); o++ {
+			RANGELOOP:
+			for y := -1; y <= 1; y++ {
+				for x := -1; x <= 1; x++ {
+					if (y == -1 && x == 0) || (y == 0 && (x == -1 || x == 1)) || (y == 1 && x == 0) {
 
-				if opponents[o].class == players[p].class { continue }
+						startCoordinate := coordinate { x: players[p].x+x, y: players[p].y+y, priority: 0, stepsTaken: 0, stepsToGo: 0 }
+						var shortestRoute []coordinate
 
-				// Calculate the MANHATTAN DISTANCE towards OPPONENT. If longer then SHORTEST ROUTE -> CONTINUE with NEXT OPPONENT
-				shortestDistance := int(math.Abs(float64(opponents[o].x-players[p].x))) + int(math.Abs(float64(opponents[o].y-players[p].y)))
-				if shortestDistance <= lenShortestRoute || lenShortestRoute == -1 {
+						OPPONENTSLOOP:
+						for o := 0; o < len(opponents); o++ {
+
+							if opponents[o].class == players[p].class { continue OPPONENTSLOOP }
+							
+							if opponents[o].x == players[p].x+x && opponents[o].y == players[p].y+y { 
+								nextToOpponent = true
+								break RANGELOOP	
+							}
+
+							// Calculate the MANHATTAN DISTANCE towards OPPONENT. If longer then SHORTEST ROUTE -> CONTINUE with NEXT OPPONENT
+							shortestDistance := int(math.Abs(float64(opponents[o].x-players[p].x + x))) + int(math.Abs(float64(opponents[o].y-players[p].y + y)))
+							if shortestRoute == nil || shortestDistance <= len(shortestRoute) + 10 {
+								
+								targetCoordinate := coordinate { x: opponents[o].x, y: opponents[o].y }
+
+								// Start to FIND a ROUTE towards this OPPONENT
+								route := findRoute(startCoordinate, targetCoordinate, grid, players)
+
+								/*fmt.Println("from y: ", players[p].y+y, ",x:", players[p].x+x, " VV ")
+								for t:= 0; t < len(route); t++ {
+									fmt.Println(route[t].y, route[t].x)
+								}*/
+
+								// NO ROUTE has been found towards this OPPONENT
+								if route == nil { continue OPPONENTSLOOP }
+
+								// If this is the SHORTEST ROUTE found so far OR the FIRST ROUTE found so far -> UPDATE shortestRoute
+								if shortestRoute == nil || len(route) <= len(shortestRoute) {
+									shortestRoute = route
+								}
+
+							}
+						}
+
+						if shortestRoute != nil {
+							shortestRoute = append([]coordinate { startCoordinate }, shortestRoute...)
+							routes = append(routes, shortestRoute)
+						}
 					
-					// Start to FIND a ROUTE towards this OPPONENT
-					route, routeFound := findRoute(players[p], opponents[o], grid, players)
-
-					// NO ROUTE has been found towards this OPPONENT
-					if !routeFound { continue OPPONENTSLOOP }
-
-					// If this is the SHORTEST ROUTE found so far OR the FIRST ROUTE found so far -> ADD ROUTE to list and update shortest route length
-					if len(route) <= lenShortestRoute || lenShortestRoute == -1 {
-						routes = append(routes, route)
-						lenShortestRoute = len(route)
 					}
-
-				}
-			}				
-
-			// If no ROUTE has been found towards ANY OPPONENT and PLAYER is also NOT STANDING NEXT TO AN OPPONENT -> CONTINUE with NEXT PLAYER
-			if len(routes) == 0 { continue PLAYERSLOOP }
-			
-
-			// Remove ROUTES that were LONGER then the SHORTEST ROUTE found
-			for r := len(routes)-1; r >= 0; r-- {
-				if len(routes[r]) > lenShortestRoute { 
-					routes = append(routes[:r], routes[r+1:]...)
 				}
 			}
 
-			// If PLAYER is STANDING NEXT TO AN OPPONENT -> PLAYER can ATTACK || ELSE || If PLAYER can TAKE STEPS -> PLAYER moves 1 POSITION towards OPPONENT
-			if len(routes[0]) == 0 {
-				playerCanAttack = true
-			} else {
-				players[p].x = routes[0][len(routes[0])-1].x
-				players[p].y = routes[0][len(routes[0])-1].y
+			// If no ROUTE has been found towards ANY OPPONENT and PLAYER is also NOT STANDING NEXT TO AN OPPONENT
+			if !nextToOpponent && len(routes) != 0 { //continue PLAYERSLOOP }
+
+				sort.Sort(byLenAndBeginPoint(routes))
+
+				//printBoard(grid, players, routes[0])
+				//bufio.NewReader(os.Stdin).ReadBytes('\n') 
+
+				players[p].x = routes[0][0].x
+				players[p].y = routes[0][0].y
+
 			}
 
 			// IF PLAYER can attack -> CALL ATTACK FUNCTION -> IF RETURNED INDEX is -1 NO PLAYER was KILLED / IF RETURNED INDEX != -1 a PLAYER was KILLED and INDEX should be AMENDED
-			if playerCanAttack { 
+			if nextToOpponent == true || (len(routes) > 0 && len(routes[0]) == 1) {
+
 				if indexKilledPlayer := attackPlayer(players[p], &players); indexKilledPlayer != -1 {
 					if indexKilledPlayer <= p { p-- }
 				}
-			}
 
-			elfsFound := false
-			goblinsFound := false
+				elfsFound := false
+				goblinsFound := false
 
-			totalHitPointsLeft := 0
-				for m := 0; m < len(players); m++ {
-				if players[m].class == ELF { elfsFound = true }
-				if players[m].class == GOBLIN { goblinsFound = true }
-				totalHitPointsLeft += players[m].hitPoints
-			}
-		
-			if !elfsFound || !goblinsFound {
-
-				if p == len(players) - 1 {
-					round++
+				totalHitPointsLeft := 0
+					for m := 0; m < len(players); m++ {
+					if players[m].class == elf { elfsFound = true }
+					if players[m].class == goblin { goblinsFound = true }
+					totalHitPointsLeft += players[m].hitPoints
 				}
-				fmt.Println("vv Board after round", round, "vv")
-				printBoard(grid, players)
-				fmt.Println("hitpoints left", totalHitPointsLeft)
-				fmt.Println("fot a total of", totalHitPointsLeft * round)
-				return
-	
-			}
 			
-		}
-		/*
-		printBoard(grid, players)
-		time.Sleep(2000*time.Millisecond)
-		fmt.Println()*/
+				if !elfsFound || !goblinsFound {
+					if p == len(players) - 1 {
+						round++
+					}
+					fmt.Println("vv Board after round", round, "vv")
+					fmt.Println("hitpoints left", totalHitPointsLeft)
+					fmt.Println("fot a total of", totalHitPointsLeft * round)
+					return
+				}
 
-		// Sort the remaining players by X-VALUE and Y-VALUE
+				continue PLAYERSLOOP
+
+			}
+
+
+		}
+
 		sort.Sort(byXY(players))
 		round++
 
@@ -234,18 +253,13 @@ func main() {
 }
 
 
-func findRoute(startPosition player, targetPosition player, grid [][]object, players []player) (shortestRoute []coordinate, routeFound bool) {
-
-	routes := [][]coordinate{}	
-	lenShortestRoute := -1
-
-	startCoordinate := coordinate { x: startPosition.x, y: startPosition.y, priority: 0, stepsTaken: 0, stepsToGo: 0 }
-	endCoordinate := coordinate { x: targetPosition.x, y: targetPosition.y }
+func findRoute(startCoordinate coordinate, targetCoordinate coordinate, grid [][]object, players []player) []coordinate {
 	
 	openList := []coordinate{}
 	openList = append(openList, startCoordinate)
 	closedList := make(map[int]map[int]coordinate)
 
+	LISTLOOP:
 	for len(openList) > 0 {
 
 		sort.Sort(byPriority(openList))
@@ -257,39 +271,28 @@ func findRoute(startPosition player, targetPosition player, grid [][]object, pla
 		if _, ok := closedList[currentCoordinate.y]; !ok {
 			closedList[currentCoordinate.y] = make(map[int]coordinate)
 		}
-
 		closedList[currentCoordinate.y][currentCoordinate.x] = currentCoordinate
 
-		// If the current COORDINATE already has a LONGER ROUTE then the SHORTEST ROUTE
-		if currentCoordinate.priority > lenShortestRoute && lenShortestRoute != -1 { continue}
+		// If a wall is found stop processing this coordinate
+		if grid[currentCoordinate.y][currentCoordinate.x].class == wall { continue LISTLOOP }
+
+		// If a PLAYER is found standing in the way
+		for p := 0; p < len(players); p++ {
+			if players[p].y == currentCoordinate.y && players[p].x == currentCoordinate.x { continue LISTLOOP }
+		}
 
 		for y := -1; y <= 1; y++ {
 			XLOOP:
 			for x := -1; x <= 1; x++ {
 				if (y == -1 && x == 0) || (y == 0 && (x == -1 || x == 1)) || (y == 1 && x == 0) {
 					
-					if currentCoordinate.x + x == endCoordinate.x && currentCoordinate.y + y == endCoordinate.y {
+					if currentCoordinate.x + x == targetCoordinate.x && currentCoordinate.y + y == targetCoordinate.y {
 						route := []coordinate{}
 						for currentCoordinate.parent != nil {
 							route = append(route, currentCoordinate)
 							currentCoordinate = *currentCoordinate.parent
 						}
-						lenShortestRoute = len(route)
-						routes = append(routes, route)
-						routeFound = true
-						continue XLOOP
-					}
-			
-					// If a WALL, ELF or GOBLIN is found stop processing this coordinate
-					if grid[currentCoordinate.y + y][currentCoordinate.x + x].class == WALL {
-						continue XLOOP
-					}
-
-					// If a player is found standing in the way
-					for p := 0; p < len(players); p++ {
-						if players[p].y == currentCoordinate.y + y && players[p].x == currentCoordinate.x + x {
-							continue XLOOP
-						}
+						return route
 					}
 
 					// If the coordinate has already been marked as closed
@@ -297,7 +300,7 @@ func findRoute(startPosition player, targetPosition player, grid [][]object, pla
 						continue XLOOP
 					}
 
-					stepsToGo := int(math.Abs(float64((currentCoordinate.x+x)-endCoordinate.x))) + int(math.Abs(float64((currentCoordinate.y+y)-endCoordinate.y)))
+					stepsToGo := int(math.Abs(float64((currentCoordinate.x+x)-targetCoordinate.x))) + int(math.Abs(float64((currentCoordinate.y+y)-targetCoordinate.y)))
 
 					for o := 0; o < len(openList); o++ {
 						if openList[o].x == currentCoordinate.x + x && openList[o].y == currentCoordinate.y + y {
@@ -315,17 +318,11 @@ func findRoute(startPosition player, targetPosition player, grid [][]object, pla
 						}
 					}
 
-					priority := currentCoordinate.stepsTaken + 1 + stepsToGo
-					if y == -1 { priority = priority + 4 }
-					if y == 0 && x == -1 { priority = priority + 3 }
-					if y == 0 && x == 1 { priority = priority + 2 }
-					if y == -1 { priority = priority + 1 }
-
 					newCoordinate := coordinate {
 						parent: &currentCoordinate,
 						x: currentCoordinate.x + x, 
 						y: currentCoordinate.y + y, 
-						priority : priority,
+						priority : currentCoordinate.stepsTaken + 1 + stepsToGo,
 						stepsTaken: currentCoordinate.stepsTaken + 1,
 						stepsToGo: stepsToGo,
 					}
@@ -338,21 +335,7 @@ func findRoute(startPosition player, targetPosition player, grid [][]object, pla
 
 	}
 
-	// REMOVE ALL ROUTES THAT ARE TOO LONG
-	for r:= len(routes)-1; r >= 0; r-- {
-		if len(routes[r]) > lenShortestRoute {
-			routes = append(routes[:r], routes[r+1:]...)
-		}
-	}
-
-	if len(routes) > 1 {
-		sort.Sort(byEndPointRoute(routes))
-		return routes[0], routeFound
-	} else if len(routes) == 1 {
-		return routes[0], routeFound
-	} else {
-		return []coordinate{}, routeFound
-	}
+	return nil
 
 }
 
@@ -397,6 +380,10 @@ func attackPlayer(attacker player, players *[]player) int {
 				// Attack THIS PLAYER and if HITPOINTS < 0 -> REMOVE PLAYER FROM LIST
 				(*players)[p].hitPoints -= attacker.attackPower
 				if (*players)[p].hitPoints < 0 {
+
+					if (*players)[p].class == elf {
+						fmt.Println("AN ELF JUST DIED!")
+					}
 					*players = append((*players)[:p], (*players)[p+1:]...)
 					return p
 				}
@@ -410,8 +397,13 @@ func attackPlayer(attacker player, players *[]player) int {
 }
 
 
-func printBoard(grid [][]object, players []player) {
+func printBoard(grid [][]object, players []player, route []coordinate) {
 
+	r := color.New(color.FgRed).Add(color.Underline)
+	b := color.New(color.FgBlue).Add(color.Underline)
+	c := color.New(color.FgGreen).Add(color.Underline)
+	p := color.New(color.FgMagenta).Add(color.Underline)
+	
 	for y := 0; y < len(grid); y++ {
 		XLOOP:
 		for x := 0; x < len(grid[y]); x++ {
@@ -419,20 +411,27 @@ func printBoard(grid [][]object, players []player) {
 			for p := 0; p < len(players); p++ {
 				if players[p].y == y && players[p].x == x {
 					switch players[p].class {
-					case ELF:
-						fmt.Printf("E")
-					case GOBLIN:
-						fmt.Printf("G")
+					case elf:
+						b.Printf("E")
+					case goblin:
+						r.Printf("G")
 					}
 					continue XLOOP
 				}
 			}
 
+			for r := 0; r < len(route); r++ {
+				if route[r].y == y && route[r].x == x {
+					p.Printf("*")
+					continue XLOOP
+				}
+			}
+
 			switch grid[y][x].class {
-			case EMPTY:
+			case empty:
 				fmt.Printf(".")
-			case WALL:
-				fmt.Printf("#")
+			case wall:
+				c.Printf("#")
 			}
 
 		}

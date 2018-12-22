@@ -2,6 +2,8 @@ package main
 
 import(
 	"fmt"
+	"sort"
+	"math"
 )
 
 const (
@@ -17,19 +19,42 @@ const (
 	targetY = 763
 	targetX = 12
 
+	neither = 0
+	torch = 1
+	gear = 2
 )
 
-type coordinate struct {
+type region struct {
 	class int
 	index int
 	erosion int
 }
 
-var cave map[int]map[int]*coordinate
+type coordinate struct {
+    parent *coordinate 
+	y int
+	x int
+	priority int
+	stepsTaken int
+	stepsToGo int
+	equipment int
+}
+type byPriority []coordinate
+func (c byPriority) Len() int {
+	return len(c)
+}
+func (c byPriority) Swap(i, j int) {
+	c[i], c[j] = c[j], c[i]
+}
+func (c byPriority) Less(i, j int) bool {
+	return c[i].priority < c[j].priority
+}
+
+var cave map[int]map[int]*region
 
 func main() {
 
-	cave = make(map[int]map[int]*coordinate)
+	cave = make(map[int]map[int]*region)
 	createCave(beginY, beginX, endY, endX)
 	//printCave()
 	fmt.Println("Total risk is:", calculateRisc())
@@ -42,12 +67,12 @@ func createCave(fromY int, fromX int, tillY int, tillX int) {
 	for y := fromY; y <= tillY; y++ {
 
 		if _, ok := cave[y]; !ok { 
-			cave[y] = make(map[int]*coordinate)
+			cave[y] = make(map[int]*region)
 		}
 
 		if y == fromY {
 			for x := fromX; x <= tillX; x++ {
-				cave[y][x] = &coordinate{}
+				cave[y][x] = &region{}
 				if y == beginY && x == beginX {
 					cave[y][x].index = 0
 				} else if y == beginY && x > beginX { 
@@ -59,7 +84,7 @@ func createCave(fromY int, fromX int, tillY int, tillX int) {
 				cave[y][x].class = cave[y][x].erosion % 3
 			}
 		} else if y > fromY && fromX <= tillX {
-			cave[y][fromX] = &coordinate{}
+			cave[y][fromX] = &region{}
 			if y > beginY && fromX == beginX { 
 				cave[y][fromX].index = y * 48271
 			} else if y > beginY && fromX > beginX {
@@ -77,7 +102,6 @@ func createCave(fromY int, fromX int, tillY int, tillX int) {
 
 }
 
-
 func calculateRisc() (result int) {
 	for y := beginY; y <= targetY; y++ {
 		for x := beginX; x <= targetX; x++ {
@@ -87,15 +111,32 @@ func calculateRisc() (result int) {
 	return result
 }
 
+func printCave() {
+	for y := beginY; y <= endY; y++ {
+		for x := beginX; x <= endX; x++ {
+			switch cave[y][x].class {
+			case rocky:
+				fmt.Printf(".")
+			case wet:
+				fmt.Printf("=")
+			case narrow:
+				fmt.Printf("|")
+			}
+		}
+		fmt.Printf("\n")
+	}
+}
 
-/*
-func findRoute(startCoordinate coordinate, targetCoordinate coordinate, grid [][]object, players []player) []coordinate {
+
+
+func findRoute(beginY int, beginX int, targetY int, targetX int) int {
 	
+	startCoordinate := coordinate{ y: 0, x:0, equipment: torch }
+
 	openList := []coordinate{}
 	openList = append(openList, startCoordinate)
-	closedList := make(map[int]map[int]coordinate)
+	closedList := []coordinate{}
 
-	LISTLOOP:
 	for len(openList) > 0 {
 
 		sort.Sort(byPriority(openList))
@@ -103,40 +144,53 @@ func findRoute(startCoordinate coordinate, targetCoordinate coordinate, grid [][
 		//Get the heighest priority coordinate from the open list and add it to the closed list
 		currentCoordinate := openList[0]
 		openList = append([]coordinate{}, openList[1:]...)
-
-		if _, ok := closedList[currentCoordinate.y]; !ok {
-			closedList[currentCoordinate.y] = make(map[int]coordinate)
-		}
-		closedList[currentCoordinate.y][currentCoordinate.x] = currentCoordinate
-
-		// If a wall is found stop processing this coordinate
-		if grid[currentCoordinate.y][currentCoordinate.x].class == wall { continue LISTLOOP }
-
-		// If a PLAYER is found standing in the way
-		for p := 0; p < len(players); p++ {
-			if players[p].y == currentCoordinate.y && players[p].x == currentCoordinate.x { continue LISTLOOP }
-		}
+		closedList = append(closedList, currentCoordinate)
 
 		for y := -1; y <= 1; y++ {
 			XLOOP:
 			for x := -1; x <= 1; x++ {
 				if (y == -1 && x == 0) || (y == 0 && (x == -1 || x == 1)) || (y == 1 && x == 0) {
 					
-					if currentCoordinate.x + x == targetCoordinate.x && currentCoordinate.y + y == targetCoordinate.y {
-						route := []coordinate{}
+					penalty := 0
+					switch cave[currentCoordinate.y+y][currentCoordinate.x+x].class {
+					case rocky:
+						if currentCoordinate.equipment == neither { penalty = 7 }
+					case wet:
+						if currentCoordinate.equipment == torch { penalty = 7 }
+					case narrow:
+						if currentCoordinate.equipment == gear { penalty = 7 }
+					}
+					
+					if currentCoordinate.y + y == targetY && currentCoordinate.x + x == targetX {
+						
+						// ROUTE FOUND 
+
+						/*route := []coordinate{}
 						for currentCoordinate.parent != nil {
 							route = append(route, currentCoordinate)
 							currentCoordinate = *currentCoordinate.parent
 						}
-						return route
+						return route*/
+
 					}
 
-					// If the coordinate has already been marked as closed
-					if _, ok := closedList[currentCoordinate.y + y][currentCoordinate.x + x]; ok {
-						continue XLOOP
+					for c := 0; c < len(closedList); c++ {
+						if closedList[c].y == currentCoordinate.y + y && closedList[c].x == currentCoordinate.x + x {
+
+							// Check if this coordinate has been reached before with more steps. If so update the coordinate in the open list
+							if currentCoordinate.stepsTaken + stepsToGo < openList[o].stepsTaken + openList[o].stepsToGo {
+								openList[o].parent = &currentCoordinate
+								openList[o].priority = currentCoordinate.stepsTaken + 1 + stepsToGo
+								openList[o].stepsTaken = currentCoordinate.stepsTaken + 1
+								openList[o].stepsToGo = stepsToGo
+								
+							}
+							continue XLOOP
+															
+						}
 					}
 
-					stepsToGo := int(math.Abs(float64((currentCoordinate.x+x)-targetCoordinate.x))) + int(math.Abs(float64((currentCoordinate.y+y)-targetCoordinate.y)))
+					stepsToGo := int(math.Abs(float64((currentCoordinate.y+y)-targetY))) + int(math.Abs(float64((currentCoordinate.x+x)-targetX)))
 
 					for o := 0; o < len(openList); o++ {
 						if openList[o].x == currentCoordinate.x + x && openList[o].y == currentCoordinate.y + y {
@@ -173,21 +227,4 @@ func findRoute(startCoordinate coordinate, targetCoordinate coordinate, grid [][
 
 	return nil
 
-}
-*/
-
-func printCave() {
-	for y := beginY; y <= endY; y++ {
-		for x := beginX; x <= endX; x++ {
-			switch cave[y][x].class {
-			case rocky:
-				fmt.Printf(".")
-			case wet:
-				fmt.Printf("=")
-			case narrow:
-				fmt.Printf("|")
-			}
-		}
-		fmt.Printf("\n")
-	}
 }

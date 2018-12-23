@@ -2,8 +2,8 @@ package main
 
 import (
 	"fmt"
-	"strings"
 	"io/ioutil"
+	"strings"
 )
 
 func main() {
@@ -19,7 +19,7 @@ func main() {
 			numDiffChar := 0
 			diffCharPosition := 0
 
-			for i:=0; i < len(id); i++ {
+			for i := 0; i < len(id); i++ {
 				if id[i] != compId[i] {
 					numDiffChar++
 					diffCharPosition = i

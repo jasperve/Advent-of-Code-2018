@@ -50,7 +50,7 @@ func main() {
 		register[ipRegister] = ipValue
 
 		//fmt.Println("before:", register)
-		fmt.Println("instruction:", instructions[ipValue])
+		//fmt.Println("instruction:", instructions[ipValue])
 
 		switch instructions[ipValue].optcode {
 		case "addr":
@@ -91,7 +91,7 @@ func main() {
 		ipValue++
 		
 
-		//fmt.Println("after:", register)
+		fmt.Println("after:", register)
 		//fmt.Println("ipvalue", ipValue)
 		//fmt.Println()
 		//fmt.Println()

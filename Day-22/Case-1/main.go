@@ -4,6 +4,7 @@ import(
 	"fmt"
 	"sort"
 	"math"
+	"github.com/fatih/color"
 )
 
 const (
@@ -11,13 +12,13 @@ const (
 	wet = 1
 	narrow = 2
 
-	caveDepth = 7740
+	caveDepth = 7740 //510 //7740
 	beginY = 0
 	beginX = 0
-	endY = 2000
-	endX = 2000
-	targetY = 763
-	targetX = 12
+	endY = 1000 //1000
+	endX = 80 //100
+	targetY = 763 //10 //763
+	targetX = 12 //10 //12
 
 	neither = 0
 	torch = 1
@@ -49,6 +50,18 @@ func (c byPriority) Swap(i, j int) {
 func (c byPriority) Less(i, j int) bool {
 	return c[i].priority < c[j].priority
 }
+type byLength [][]coordinate
+func (c byLength) Len() int {
+	return len(c)
+}
+func (c byLength) Swap(i, j int) {
+	c[i], c[j] = c[j], c[i]
+}
+func (c byLength) Less(i, j int) bool {
+	return len(c[i]) < len(c[j])
+}
+
+
 
 var cave map[int]map[int]*region
 
@@ -58,7 +71,9 @@ func main() {
 	createCave(beginY, beginX, endY, endX)
 	//printCave()
 	fmt.Println("Total risk is:", calculateRisc())
-
+	//fmt.Println(cave[10][10])
+	printCave(findRoute())
+	
 }
 
 
@@ -81,7 +96,11 @@ func createCave(fromY int, fromX int, tillY int, tillX int) {
 					cave[y][x].index = cave[y-1][x].erosion * cave[y][x-1].erosion
 				}
 				cave[y][x].erosion = (cave[y][x].index + caveDepth) % 20183
-				cave[y][x].class = cave[y][x].erosion % 3
+				if y == targetY && x == targetX {
+					cave[y][x].class = rocky
+				} else {
+					cave[y][x].class = cave[y][x].erosion % 3
+				}
 			}
 		} else if y > fromY && fromX <= tillX {
 			cave[y][fromX] = &region{}
@@ -111,16 +130,40 @@ func calculateRisc() (result int) {
 	return result
 }
 
-func printCave() {
+func printCave(route []coordinate) {
+
+	c := color.New(color.FgGreen).Add(color.Underline)
+
 	for y := beginY; y <= endY; y++ {
 		for x := beginX; x <= endX; x++ {
+
+			partOfRoute := false
+
+			for r := 0; r < len(route); r++ {
+				if route[r].y == y && route[r].x == x {
+					partOfRoute = true
+				}
+			}
+
 			switch cave[y][x].class {
 			case rocky:
-				fmt.Printf(".")
+				if !partOfRoute {
+					fmt.Printf(".")
+				} else {
+					c.Printf(".")
+				}
 			case wet:
-				fmt.Printf("=")
+				if !partOfRoute {
+					fmt.Printf("=")
+				} else {
+					c.Printf("=")
+				}			
 			case narrow:
-				fmt.Printf("|")
+				if !partOfRoute {
+					fmt.Printf("|")
+				} else {
+					c.Printf("|")
+				}
 			}
 		}
 		fmt.Printf("\n")
@@ -129,8 +172,10 @@ func printCave() {
 
 
 
-func findRoute(beginY int, beginX int, targetY int, targetX int) int {
-	
+func findRoute() []coordinate {
+
+	routes := [][]coordinate{}
+
 	startCoordinate := coordinate{ y: 0, x:0, equipment: torch }
 
 	openList := []coordinate{}
@@ -139,72 +184,105 @@ func findRoute(beginY int, beginX int, targetY int, targetX int) int {
 
 	for len(openList) > 0 {
 
-		sort.Sort(byPriority(openList))
+		//sort.Sort(byPriority(openList))
 		
 		//Get the heighest priority coordinate from the open list and add it to the closed list
 		currentCoordinate := openList[0]
 		openList = append([]coordinate{}, openList[1:]...)
 		closedList = append(closedList, currentCoordinate)
 
+		if currentCoordinate.y == targetY && currentCoordinate.x == targetX {
+						
+			// ROUTE FOUND 
+			fmt.Println(currentCoordinate.stepsTaken)
+
+			route := []coordinate{}
+			for currentCoordinate.parent != nil {
+				route = append(route, currentCoordinate)
+				currentCoordinate = *currentCoordinate.parent
+			}
+
+			routes = append(routes, route)
+			continue
+			
+		}
+
 		for y := -1; y <= 1; y++ {
 			XLOOP:
 			for x := -1; x <= 1; x++ {
 				if (y == -1 && x == 0) || (y == 0 && (x == -1 || x == 1)) || (y == 1 && x == 0) {
 					
+					if _, ok := cave[currentCoordinate.y+y][currentCoordinate.x+x]; !ok { continue XLOOP }
+
+					equipment := currentCoordinate.equipment
 					penalty := 0
+
 					switch cave[currentCoordinate.y+y][currentCoordinate.x+x].class {
 					case rocky:
-						if currentCoordinate.equipment == neither { penalty = 7 }
-					case wet:
-						if currentCoordinate.equipment == torch { penalty = 7 }
-					case narrow:
-						if currentCoordinate.equipment == gear { penalty = 7 }
-					}
-					
-					if currentCoordinate.y + y == targetY && currentCoordinate.x + x == targetX {
-						
-						// ROUTE FOUND 
-
-						/*route := []coordinate{}
-						for currentCoordinate.parent != nil {
-							route = append(route, currentCoordinate)
-							currentCoordinate = *currentCoordinate.parent
-						}
-						return route*/
-
-					}
-
-					for c := 0; c < len(closedList); c++ {
-						if closedList[c].y == currentCoordinate.y + y && closedList[c].x == currentCoordinate.x + x {
-
-							// Check if this coordinate has been reached before with more steps. If so update the coordinate in the open list
-							if currentCoordinate.stepsTaken + stepsToGo < openList[o].stepsTaken + openList[o].stepsToGo {
-								openList[o].parent = &currentCoordinate
-								openList[o].priority = currentCoordinate.stepsTaken + 1 + stepsToGo
-								openList[o].stepsTaken = currentCoordinate.stepsTaken + 1
-								openList[o].stepsToGo = stepsToGo
-								
+						if currentCoordinate.equipment == neither { 
+							if cave[currentCoordinate.y][currentCoordinate.x].class == wet {
+								equipment = gear
+								if currentCoordinate.y+y == targetY && currentCoordinate.x+x == targetX {
+									penalty +=7
+								}
+							} else if cave[currentCoordinate.y][currentCoordinate.x].class == narrow {
+								equipment = torch
 							}
-							continue XLOOP
-															
+							penalty += 7 
+						}
+						if currentCoordinate.equipment == gear && currentCoordinate.y+y == targetY && currentCoordinate.x+x == targetX {
+							penalty +=7
+						}
+					case wet:
+						if currentCoordinate.equipment == torch { 
+							if cave[currentCoordinate.y][currentCoordinate.x].class == rocky {
+								equipment = gear
+							} else if cave[currentCoordinate.y][currentCoordinate.x].class == narrow {
+								equipment = neither
+							}
+							penalty += 7 	
+						}
+					case narrow:
+						if currentCoordinate.equipment == gear { 
+							if cave[currentCoordinate.y][currentCoordinate.x].class == rocky {
+								equipment = torch
+							} else if cave[currentCoordinate.y][currentCoordinate.x].class == wet {
+								equipment = neither
+							}
+							penalty += 7 
 						}
 					}
 
 					stepsToGo := int(math.Abs(float64((currentCoordinate.y+y)-targetY))) + int(math.Abs(float64((currentCoordinate.x+x)-targetX)))
 
+					for c := 0; c < len(closedList); c++ {
+						if closedList[c].y == currentCoordinate.y + y && closedList[c].x == currentCoordinate.x + x {
+							// Check if this coordinate has been reached before with more steps. If so update the coordinate and re-add it to the open list
+							if currentCoordinate.stepsTaken + 1 + penalty < closedList[c].stepsTaken {
+								closedList[c].parent = &currentCoordinate
+								closedList[c].priority = currentCoordinate.stepsTaken + 1 + penalty + stepsToGo
+								closedList[c].stepsTaken = currentCoordinate.stepsTaken + 1 + penalty
+								closedList[c].stepsToGo = stepsToGo
+								closedList[c].equipment = equipment
+								openList = append(openList, closedList[c])
+								closedList = append(closedList[:c], closedList[c+1:]...)
+							}
+							continue XLOOP
+						}
+					}
+
 					for o := 0; o < len(openList); o++ {
 						if openList[o].x == currentCoordinate.x + x && openList[o].y == currentCoordinate.y + y {
-
 							// Check if this coordinate has been reached before with more steps. If so update the coordinate in the open list
-							if currentCoordinate.stepsTaken + stepsToGo < openList[o].stepsTaken + openList[o].stepsToGo {
+							if currentCoordinate.stepsTaken + 1 + penalty < openList[o].stepsTaken {
 								openList[o].parent = &currentCoordinate
-								openList[o].priority = currentCoordinate.stepsTaken + 1 + stepsToGo
-								openList[o].stepsTaken = currentCoordinate.stepsTaken + 1
+								openList[o].priority = currentCoordinate.stepsTaken + 1 + penalty + stepsToGo
+								openList[o].stepsTaken = currentCoordinate.stepsTaken + 1 + penalty
 								openList[o].stepsToGo = stepsToGo
+								openList[o].equipment = equipment
 								
 							}
 							continue XLOOP
-															
 						}
 					}
 
@@ -212,9 +290,10 @@ func findRoute(beginY int, beginX int, targetY int, targetX int) int {
 						parent: &currentCoordinate,
 						x: currentCoordinate.x + x, 
 						y: currentCoordinate.y + y, 
-						priority : currentCoordinate.stepsTaken + 1 + stepsToGo,
-						stepsTaken: currentCoordinate.stepsTaken + 1,
+						priority: currentCoordinate.stepsTaken + 1 + penalty + stepsToGo,
+						stepsTaken: currentCoordinate.stepsTaken + 1 + penalty,
 						stepsToGo: stepsToGo,
+						equipment: equipment,
 					}
 
 					openList = append(openList, newCoordinate)
@@ -225,6 +304,11 @@ func findRoute(beginY int, beginX int, targetY int, targetX int) int {
 
 	}
 
-	return nil
+	if len(routes) > 0 {
+		sort.Sort(byLength(routes))
+		return routes[1]
+	}
+	
+	return routes[0]
 
 }

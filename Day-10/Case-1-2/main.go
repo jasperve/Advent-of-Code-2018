@@ -13,8 +13,8 @@ import (
 )
 
 type star struct {
-	x int
-	y int
+	x    int
+	y    int
 	velX int
 	velY int
 }
@@ -36,7 +36,7 @@ func main() {
 		velX, _ := strconv.Atoi(matches[3])
 		velY, _ := strconv.Atoi(matches[4])
 
-		newStar := star { x: x, y: y, velX: velX, velY: velY, }
+		newStar := star{x: x, y: y, velX: velX, velY: velY}
 		stars = append(stars, newStar)
 
 	}
@@ -44,7 +44,7 @@ func main() {
 	var locations map[string]bool
 	iteration := 0
 
-	MAIN:
+MAIN:
 	for {
 
 		minX, maxX, minY, maxY := 2147483647, -2147483647, 2147483647, -2147483647
@@ -53,12 +53,12 @@ func main() {
 
 		for _, star := range stars {
 
-			newX := star.x + star.velX * iteration
-			newY := star.y + star.velY * iteration
+			newX := star.x + star.velX*iteration
+			newY := star.y + star.velY*iteration
 			neighbour := false
 
-			for x:= newX - 1; x <= newX + 1; x++ {
-				for y := newY - 1; y <= newY + 1; y++ {
+			for x := newX - 1; x <= newX+1; x++ {
+				for y := newY - 1; y <= newY+1; y++ {
 
 					if _, ok := locations[fmt.Sprintf("%v,%v", x, y)]; ok {
 						locations[fmt.Sprintf("%v,%v", x, y)] = true
@@ -70,10 +70,18 @@ func main() {
 
 			locations[fmt.Sprintf("%v,%v", newX, newY)] = neighbour
 
-			if newX < minX { minX = newX }
-			if newX > maxX { maxX = newX }
-			if newY < minY { minY = newY }
-			if newY > maxY { maxY = newY }
+			if newX < minX {
+				minX = newX
+			}
+			if newX > maxX {
+				maxX = newX
+			}
+			if newY < minY {
+				minY = newY
+			}
+			if newY > maxY {
+				maxY = newY
+			}
 
 		}
 
@@ -87,7 +95,7 @@ func main() {
 		modX := minX * -1
 		modY := minY * -1
 
-		img := image.NewRGBA(image.Rectangle{image.Point{0, 0}, image.Point{maxX+modX+10, maxY+modY+10}})
+		img := image.NewRGBA(image.Rectangle{image.Point{0, 0}, image.Point{maxX + modX + 10, maxY + modY + 10}})
 
 		cyan := color.RGBA{100, 200, 200, 0xff}
 

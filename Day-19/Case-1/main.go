@@ -2,15 +2,15 @@ package main
 
 import (
 	"fmt"
-	"strconv"
-	"regexp"
 	"io/ioutil"
+	"regexp"
+	"strconv"
 )
 
 type instruction struct {
 	optcode string
-	inputA int
-	inputB int
+	inputA  int
+	inputB  int
 	outputC int
 }
 
@@ -20,33 +20,32 @@ var ipValue = 0
 func main() {
 
 	instructionRegex := regexp.MustCompile("([^ ]*)\\s(\\d*)\\s(\\d*)\\s(\\d*)\\r\\n?|\\n")
-	
+
 	instructions := []instruction{}
 
 	input, _ := ioutil.ReadFile("input.txt")
 	lines := instructionRegex.FindAllStringSubmatch(string(input), -1)
-	
-	for _, line := range lines { 
+
+	for _, line := range lines {
 		optcode := string(line[1])
 		inputA, _ := strconv.Atoi(string(line[2]))
 		inputB, _ := strconv.Atoi(string(line[3]))
 		outputC, _ := strconv.Atoi(string(line[4]))
-		
-		newInstruction := instruction {
+
+		newInstruction := instruction{
 			optcode: optcode,
-			inputA: inputA,
-			inputB: inputB,
+			inputA:  inputA,
+			inputB:  inputB,
 			outputC: outputC,
 		}
 
 		instructions = append(instructions, newInstruction)
 	}
-	
 
-	register := [6]int{1,0,0,0,0,0}
+	register := [6]int{1, 0, 0, 0, 0, 0}
 
 	for ipValue < len(instructions) {
-		
+
 		register[ipRegister] = ipValue
 
 		//fmt.Println("before:", register)
@@ -89,13 +88,11 @@ func main() {
 
 		ipValue = register[ipRegister]
 		ipValue++
-		
 
 		fmt.Println("after:", register)
 		//fmt.Println("ipvalue", ipValue)
 		//fmt.Println()
 		//fmt.Println()
-
 
 	}
 
@@ -103,135 +100,119 @@ func main() {
 
 }
 
-
 // addr (add register) stores into register C the result of adding register A and register B.
 func addr(register [6]int, inputA int, inputB int, outputC int) [6]int {
 	register[outputC] = register[inputA] + register[inputB]
-	return register	
-} 
-
+	return register
+}
 
 // addi (add immediate) stores into register C the result of adding register A and value B.
 func addi(register [6]int, inputA int, inputB int, outputC int) [6]int {
 	register[outputC] = register[inputA] + inputB
 	return register
-} 
-
+}
 
 // mulr (multiply register) stores into register C the result of multiplying register A and register B.
 func mulr(register [6]int, inputA int, inputB int, outputC int) [6]int {
 	register[outputC] = register[inputA] * register[inputB]
 	return register
-} 
-
+}
 
 // muli (multiply immediate) stores into register C the result of multiplying register A and value B.
 func muli(register [6]int, inputA int, inputB int, outputC int) [6]int {
 	register[outputC] = register[inputA] * inputB
 	return register
-} 
-
+}
 
 // banr (bitwise AND register) stores into register C the result of the bitwise AND of register A and register B.
 func banr(register [6]int, inputA int, inputB int, outputC int) [6]int {
 	register[outputC] = register[inputA] & register[inputB]
 	return register
-} 
-
+}
 
 // bani (bitwise AND immediate) stores into register C the result of the bitwise AND of register A and value B.
 func bani(register [6]int, inputA int, inputB int, outputC int) [6]int {
 	register[outputC] = register[inputA] & inputB
 	return register
-} 
-
+}
 
 // borr (bitwise OR register) stores into register C the result of the bitwise OR of register A and register B.
 func borr(register [6]int, inputA int, inputB int, outputC int) [6]int {
 	register[outputC] = register[inputA] | register[inputB]
 	return register
-} 
-
+}
 
 // bori (bitwise OR immediate) stores into register C the result of the bitwise OR of register A and value B.
 func bori(register [6]int, inputA int, inputB int, outputC int) [6]int {
 	register[outputC] = register[inputA] | inputB
 	return register
-} 
-
+}
 
 // setr (set register) copies the contents of register A into register C. (Input B is ignored.)
 func setr(register [6]int, inputA int, inputB int, outputC int) [6]int {
 	register[outputC] = register[inputA]
 	return register
-} 
-
+}
 
 // seti (set immediate) stores value A into register C. (Input B is ignored.)
 func seti(register [6]int, inputA int, inputB int, outputC int) [6]int {
 	register[outputC] = inputA
 	return register
-} 
-
+}
 
 // gtir (greater-than immediate/register) sets register C to 1 if value A is greater than register B. Otherwise, register C is set to 0.
 func gtir(register [6]int, inputA int, inputB int, outputC int) [6]int {
-	if inputA > register[inputB] { 
+	if inputA > register[inputB] {
 		register[outputC] = 1
 	} else {
 		register[outputC] = 0
 	}
 	return register
-} 
-
+}
 
 // gtri (greater-than register/immediate) sets register C to 1 if register A is greater than value B. Otherwise, register C is set to 0.
 func gtri(register [6]int, inputA int, inputB int, outputC int) [6]int {
-	if register[inputA] > inputB { 
+	if register[inputA] > inputB {
 		register[outputC] = 1
 	} else {
 		register[outputC] = 0
 	}
 	return register
-} 
-
+}
 
 // gtrr (greater-than register/register) sets register C to 1 if register A is greater than register B. Otherwise, register C is set to 0.
 func gtrr(register [6]int, inputA int, inputB int, outputC int) [6]int {
-	if register[inputA] > register[inputB] { 
+	if register[inputA] > register[inputB] {
 		register[outputC] = 1
 	} else {
 		register[outputC] = 0
 	}
 	return register
-} 
-
+}
 
 // eqir (equal immediate/register) sets register C to 1 if value A is equal to register B. Otherwise, register C is set to 0.
 func eqir(register [6]int, inputA int, inputB int, outputC int) [6]int {
-	if inputA == register[inputB] { 
+	if inputA == register[inputB] {
 		register[outputC] = 1
 	} else {
 		register[outputC] = 0
 	}
 	return register
-} 
-
+}
 
 // eqri (equal register/immediate) sets register C to 1 if register A is equal to value B. Otherwise, register C is set to 0.
 func eqri(register [6]int, inputA int, inputB int, outputC int) [6]int {
-	if register[inputA] == inputB { 
+	if register[inputA] == inputB {
 		register[outputC] = 1
 	} else {
 		register[outputC] = 0
 	}
 	return register
-} 
-
+}
 
 // eqrr (equal register/register) sets register C to 1 if register A is equal to register B. Otherwise, register C is set to 0.
 func eqrr(register [6]int, inputA int, inputB int, outputC int) [6]int {
-	if register[inputA] == register[inputB] { 
+	if register[inputA] == register[inputB] {
 		register[outputC] = 1
 	} else {
 		register[outputC] = 0

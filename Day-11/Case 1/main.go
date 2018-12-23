@@ -16,7 +16,7 @@ func main() {
 	for x := 1; x <= gridSize; x++ {
 		row := []int{}
 		for y := 1; y <= gridSize; y++ {
-			row = append(row, (y*(x+10)+gridSerialNumber)*(x+10)%1000/100 - 5)
+			row = append(row, (y*(x+10)+gridSerialNumber)*(x+10)%1000/100-5)
 		}
 		grid = append(grid, row)
 	}
@@ -28,14 +28,14 @@ func main() {
 		for y := 1; y < gridSize-2; y++ {
 
 			powerLevel := 0
-			for  subX := x-1; subX <= x+1; subX++ {
-				for  subY := y-1; subY <= y+1; subY++ {
+			for subX := x - 1; subX <= x+1; subX++ {
+				for subY := y - 1; subY <= y+1; subY++ {
 					powerLevel += grid[subX][subY]
 				}
 			}
 
 			if powerLevel > maxPowerLevel {
-				maxPower = coordinate { x: x, y: y }
+				maxPower = coordinate{x: x, y: y}
 				maxPowerLevel = powerLevel
 			}
 

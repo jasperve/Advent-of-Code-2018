@@ -1,21 +1,19 @@
 package main
 
 import (
-
-	"fmt"
-	"os"
 	"bufio"
-	"strings"
-	"strconv"
+	"fmt"
 	"math"
-
+	"os"
+	"strconv"
+	"strings"
 )
 
 type coordinate struct {
-	x int
-	y int
+	x        int
+	y        int
 	infinite bool
-	count int
+	count    int
 }
 
 func main() {
@@ -31,7 +29,7 @@ func main() {
 		x, _ := strconv.Atoi(line[0])
 		y, _ := strconv.Atoi(line[1])
 
-		c := coordinate { x: x, y: y, }
+		c := coordinate{x: x, y: y}
 		coordinates = append(coordinates, c)
 
 	}
@@ -39,8 +37,12 @@ func main() {
 	maxX, maxY := 0, 0
 
 	for _, v := range coordinates {
-		if v.x > maxX { maxX = v.x }
-		if v.y > maxY { maxY = v.y }
+		if v.x > maxX {
+			maxX = v.x
+		}
+		if v.y > maxY {
+			maxY = v.y
+		}
 	}
 
 	for y := 0; y <= maxY; y++ {
@@ -61,7 +63,7 @@ func main() {
 
 			}
 
-			if (y == 0 || y == maxY || x == 0 || x== maxX) && nearestIndex != -1 {
+			if (y == 0 || y == maxY || x == 0 || x == maxX) && nearestIndex != -1 {
 				coordinates[nearestIndex].infinite = true
 			} else if nearestIndex != -1 {
 				coordinates[nearestIndex].count++

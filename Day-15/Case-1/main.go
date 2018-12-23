@@ -1,28 +1,28 @@
 package main
 
 import (
-	"fmt"
 	"bufio"
-	"os"
+	"fmt"
 	"log"
 	"math"
+	"os"
 	"sort"
 )
 
 const (
-	EMPTY = 0
-	WALL = 1
-	ELF = 2
+	EMPTY  = 0
+	WALL   = 1
+	ELF    = 2
 	GOBLIN = 3
 )
 
 type coordinate struct {
-	x int
-	y int
-	class int
+	x           int
+	y           int
+	class       int
 	attackPower int
-	hitPoints int
-	step int
+	hitPoints   int
+	step        int
 }
 
 type byPosition [][]*coordinate
@@ -43,9 +43,11 @@ func main() {
 
 	coordinates = make(map[int]map[int]*coordinate)
 	players := []*coordinate{}
-	
+
 	file, err := os.Open("input.txt")
-	if err != nil { log.Fatalln("Unable to open input file") }
+	if err != nil {
+		log.Fatalln("Unable to open input file")
+	}
 
 	y := 0
 	input := bufio.NewScanner(file)
@@ -54,10 +56,10 @@ func main() {
 		row := make(map[int]*coordinate)
 		for x, u := range input.Text() {
 
-			newCoordinate := coordinate{ x: x, y :y, class: EMPTY }
+			newCoordinate := coordinate{x: x, y: y, class: EMPTY}
 
 			switch u {
-			case 35: 
+			case 35:
 				newCoordinate.class = WALL
 			case 69:
 				newCoordinate.class = ELF
@@ -70,9 +72,9 @@ func main() {
 				newCoordinate.hitPoints = 200
 				players = append(players, &newCoordinate)
 			}
-			
+
 			row[x] = &newCoordinate
-			
+
 		}
 		coordinates[y] = row
 		y++
@@ -86,34 +88,36 @@ func main() {
 
 			for o := 0; o < len(players); o++ {
 
-				if players[p].class == players[o].class { continue }
-				
+				if players[p].class == players[o].class {
+					continue
+				}
+
 				//From this point on we need to calculate which opponent is closest
-				fmt.Printf("Calculating routes for %v on: %v, %v towards %v on %v, %v\n", players[p].class, players[p].x, players[p].y, players[o].class, players[o].x, players[o].y) 
+				fmt.Printf("Calculating routes for %v on: %v, %v towards %v on %v, %v\n", players[p].class, players[p].x, players[p].y, players[o].class, players[o].x, players[o].y)
 
 				leastSteps := 0
 				possibleRoutes := [][]*coordinate{}
 				calculateRoutes(players[p], players[p], players[o], &[]*coordinate{}, []*coordinate{}, &possibleRoutes, 0, &leastSteps)
-		
+
 				if len(possibleRoutes) > 0 {
-				
+
 					//Remove all the routes that are longer then the minimal route
 					for pR := 0; pR < len(possibleRoutes); pR++ {
 						if len(possibleRoutes[pR]) > leastSteps {
 							possibleRoutes = append(possibleRoutes[:pR], possibleRoutes[pR+1:]...)
-						}		
+						}
 					}
-					
+
 					//Sort the remaining possible routes by endpoint
 					sort.Sort(byPosition(possibleRoutes))
-				
+
 					if len(possibleRoutes[0]) > 1 {
 						fmt.Printf("Player on position x: %v, y: %v is moving to x: %v, y: %v\n\n", players[p].x, players[p].y, possibleRoutes[0][1].x, possibleRoutes[0][1].y)
-						players[p].x = possibleRoutes[0][1].x 
+						players[p].x = possibleRoutes[0][1].x
 						players[p].y = possibleRoutes[0][1].y
-						coordinates[players[p].y][players[p].x], coordinates[players[p].y][players[p].x] = possibleRoutes[0][1], players[p] 
+						coordinates[players[p].y][players[p].x], coordinates[players[p].y][players[p].x] = possibleRoutes[0][1], players[p]
 					}
-			
+
 				} else {
 					fmt.Println("NO MORE ROUTES FOUND!")
 					return
@@ -131,7 +135,7 @@ func main() {
 		}
 
 		return
-	
+
 	}
 
 }
@@ -147,8 +151,8 @@ func calculateRoutes(currentPosition *coordinate, startPosition *coordinate, tar
 	}
 
 	if *leastSteps != 0 {
-		if len(currentRoute) + int(math.Abs(float64(currentPosition.x-targetPosition.x))) + int(math.Abs(float64(currentPosition.y-targetPosition.y))) > *leastSteps { 
-			return 
+		if len(currentRoute)+int(math.Abs(float64(currentPosition.x-targetPosition.x)))+int(math.Abs(float64(currentPosition.y-targetPosition.y))) > *leastSteps {
+			return
 		}
 	}
 
@@ -161,7 +165,7 @@ func calculateRoutes(currentPosition *coordinate, startPosition *coordinate, tar
 	}
 
 	currentRoute = append(currentRoute, currentPosition)
-	
+
 	if len(currentRoute) > 1 && (currentPosition.class == WALL || currentPosition.class == ELF || currentPosition.class == GOBLIN) {
 		return
 	}
@@ -208,14 +212,18 @@ func calculateRoutes(currentPosition *coordinate, startPosition *coordinate, tar
 		directionPriority = append(directionPriority, coordinates[currentPosition.y+1][currentPosition.x])
 		directionPriority = append(directionPriority, coordinates[currentPosition.y][currentPosition.x+1])
 	}
-	
+
 	for dP := 0; dP < len(directionPriority); dP++ {
 		nextPositionFound := false
 		for cR := 0; cR < len(currentRoute); cR++ {
-			if directionPriority[dP] == currentRoute[cR] { nextPositionFound = true }
+			if directionPriority[dP] == currentRoute[cR] {
+				nextPositionFound = true
+			}
 		}
 		for pP := 0; pP < len(*passedPositions); pP++ {
-			if directionPriority[dP] == (*passedPositions)[pP] && step >= (*passedPositions)[pP].step { nextPositionFound = true }
+			if directionPriority[dP] == (*passedPositions)[pP] && step >= (*passedPositions)[pP].step {
+				nextPositionFound = true
+			}
 		}
 		if !nextPositionFound {
 			calculateRoutes(directionPriority[dP], startPosition, targetPosition, passedPositions, currentRoute, possibleRoutes, step+1, leastSteps)

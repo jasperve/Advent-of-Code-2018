@@ -4,12 +4,12 @@ import "fmt"
 
 type marble struct {
 	number int
-	left *marble
-	right *marble
+	left   *marble
+	right  *marble
 }
 
 const maxNumber = 7162600 //25 sample
-const numPlayers = 438 //9 sample
+const numPlayers = 438    //9 sample
 
 func main() {
 
@@ -19,7 +19,7 @@ func main() {
 		players[i] = 0
 	}
 
-	marble0 := marble {
+	marble0 := marble{
 		number: 0,
 	}
 	marble0.left = &marble0
@@ -41,10 +41,10 @@ func main() {
 
 			} else {
 
-				newMarble := marble {
+				newMarble := marble{
 					number: nextNumber,
-					left: currentMarble.getNeighbour(1),
-					right: currentMarble.getNeighbour(2),
+					left:   currentMarble.getNeighbour(1),
+					right:  currentMarble.getNeighbour(2),
 				}
 
 				currentMarble.getNeighbour(2).left = &newMarble

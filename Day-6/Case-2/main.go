@@ -1,14 +1,12 @@
 package main
 
 import (
-
-	"fmt"
-	"os"
 	"bufio"
-	"strings"
-	"strconv"
+	"fmt"
 	"math"
-
+	"os"
+	"strconv"
+	"strings"
 )
 
 type coordinate struct {
@@ -29,7 +27,7 @@ func main() {
 		x, _ := strconv.Atoi(line[0])
 		y, _ := strconv.Atoi(line[1])
 
-		c := coordinate { x: x, y: y, }
+		c := coordinate{x: x, y: y}
 		coordinates = append(coordinates, c)
 
 	}
@@ -37,8 +35,12 @@ func main() {
 	maxX, maxY := 0, 0
 
 	for _, v := range coordinates {
-		if v.x > maxX { maxX = v.x }
-		if v.y > maxY { maxY = v.y }
+		if v.x > maxX {
+			maxX = v.x
+		}
+		if v.y > maxY {
+			maxY = v.y
+		}
 	}
 
 	numInRange := 0

@@ -8,8 +8,8 @@ const gridSize = 300
 const gridSerialNumber = 7857
 
 type coordinate struct {
-	x int
-	y int
+	x    int
+	y    int
 	size int
 }
 
@@ -19,7 +19,7 @@ func main() {
 	for x := 1; x < gridSize; x++ {
 		row := []int{}
 		for y := 1; y < gridSize; y++ {
-			row = append(row, (y*(x+10)+gridSerialNumber)*(x+10)%1000/100 - 5)
+			row = append(row, (y*(x+10)+gridSerialNumber)*(x+10)%1000/100-5)
 		}
 		grid = append(grid, row)
 	}
@@ -59,7 +59,7 @@ func main() {
 				}
 
 				if powerLevel > maxPowerLevel {
-					maxPower = coordinate{x: x+1, y: y+1, size: powerGridSize}
+					maxPower = coordinate{x: x + 1, y: y + 1, size: powerGridSize}
 					maxPowerLevel = powerLevel
 				}
 

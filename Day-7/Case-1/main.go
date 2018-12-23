@@ -32,7 +32,9 @@ func main() {
 		for i := 'A'; i <= 'Z'; i++ {
 			if step, ok := steps[uint8(i)]; ok {
 				for _, v := range output {
-					if _, ok := step[v]; ok { delete(step, v) }
+					if _, ok := step[v]; ok {
+						delete(step, v)
+					}
 				}
 				if len(step) == 0 {
 					output = append(output, uint8(i))

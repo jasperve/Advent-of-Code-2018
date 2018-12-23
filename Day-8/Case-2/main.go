@@ -2,9 +2,9 @@ package main
 
 import (
 	"fmt"
-	"strconv"
 	"io/ioutil"
 	"log"
+	"strconv"
 	"strings"
 )
 
@@ -30,7 +30,7 @@ func splitToIntSlice(location string, sep string) (out []int) {
 
 func calculateMd(input []int) (int, int) {
 
-	numG, numMd, amountMd, amountMdGroup, readMd := input[0], input[1], 0, []int{} , 2
+	numG, numMd, amountMd, amountMdGroup, readMd := input[0], input[1], 0, []int{}, 2
 
 	for i := 0; i < numG; i++ {
 		subAmount, subRead := calculateMd(append([]int{}, input[readMd:]...))

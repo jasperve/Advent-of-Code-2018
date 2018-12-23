@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"io/ioutil"
 	//"strconv"
-	"strings"
 	"regexp"
+	"strings"
 )
 
 const fabricWidth = 1000
@@ -29,7 +29,6 @@ func main() {
 
 			fmt.Println(matches[1])
 			fmt.Printf("%T", matches[1])
-
 
 			/*xI, _ := strconv.Atoi(matches[1])
 			yI, _ := strconv.Atoi(matches[2])
@@ -57,7 +56,7 @@ func main() {
 				fmt.Printf("Number with no overlaps: %v", matches[0])
 
 			}
-*/
+			*/
 		}
 
 	}

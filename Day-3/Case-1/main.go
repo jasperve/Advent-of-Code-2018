@@ -24,7 +24,7 @@ func main() {
 	for _, claim := range claims {
 
 		//number := strings.TrimSpace(claim[:strings.Index(claim, "@")])
-		location := strings.TrimSpace(claim[strings.Index(claim, "@")+2:strings.Index(claim, ":")])
+		location := strings.TrimSpace(claim[strings.Index(claim, "@")+2 : strings.Index(claim, ":")])
 		size := strings.TrimSpace(claim[strings.Index(claim, ":")+2:])
 		xS := location[:strings.Index(location, ",")]
 		yS := location[strings.Index(location, ",")+1:]

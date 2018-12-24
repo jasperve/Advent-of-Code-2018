@@ -3,22 +3,23 @@ package main
 import (
 	"fmt"
 	"github.com/fatih/color"
-	"math"
-	"sort"
+//	"math"
+//	"sort"
 )
 
+//11109, 731, 9 == 1008
 const (
 	rocky  = 0
 	wet    = 1
 	narrow = 2
 
-	caveDepth = 7740 //510 //7740
+	caveDepth = 11109 //7740 //510 //7740
 	beginY    = 0
 	beginX    = 0
-	endY      = 1000
-	endX      = 100
-	targetY   = 763 //10 //763
-	targetX   = 12  //10 //12
+	endY      = 800
+	endX      = 80
+	targetY   = 731 //10 //763
+	targetX   = 9  //10 //12
 
 	neither = 0
 	torch   = 1
@@ -70,7 +71,6 @@ func main() {
 
 	cave = make(map[int]map[int]*region)
 	createCave(beginY, beginX, endY, endX)
-	//printCave()
 	fmt.Println("Total risk is:", calculateRisc())
 	findRoute()
 	//printCave(findRoute())
@@ -174,7 +174,7 @@ func printCave(route []coordinate) {
 
 func findRoute() []coordinate {
 
-	routes := [][]coordinate{}
+	//routes := [][]coordinate{}
 
 	startCoordinate := coordinate{y: 0, x: 0, equipment: torch}
 	openList := []coordinate{}
@@ -183,27 +183,26 @@ func findRoute() []coordinate {
 
 	for len(openList) > 0 {
 
-		sort.Sort(byPriority(openList))
+		//sort.Sort(byPriority(openList))
 
 		//Get the heighest priority coordinate from the open list and add it to the closed list
 		currentCoordinate := openList[0]
 		openList = append([]coordinate{}, openList[1:]...)
 		closedList = append(closedList, currentCoordinate)
 
-		if currentCoordinate.y == targetY && currentCoordinate.x == targetX {
+		/*if currentCoordinate.y == targetY && currentCoordinate.x == targetX {
 
 			// ROUTE FOUND
 			fmt.Println(currentCoordinate.stepsTaken)
 			route := []coordinate{}
 			for currentCoordinate.parent != nil {
 				route = append(route, currentCoordinate)
-				//fmt.Println("x:", currentCoordinate.x, ", y: ", currentCoordinate.y, "/ equipment:", currentCoordinate.equipment, "/ steps taken:", currentCoordinate.stepsTaken)
 				currentCoordinate = *currentCoordinate.parent
 			}
 			routes = append(routes, route)
-			continue
+			return route
 
-		}
+		}*/
 
 		for y := -1; y <= 1; y++ {
 		XLOOP:
@@ -219,19 +218,18 @@ func findRoute() []coordinate {
 
 					switch cave[currentCoordinate.y+y][currentCoordinate.x+x].class {
 					case rocky:
+						
 						if currentCoordinate.equipment == neither {
 							if cave[currentCoordinate.y][currentCoordinate.x].class == wet {
 								equipment = gear
 								if currentCoordinate.y+y == targetY && currentCoordinate.x+x == targetX {
-									fmt.Println("ooit hier?")
 									penalty += 7
 								}
 							} else if cave[currentCoordinate.y][currentCoordinate.x].class == narrow {
 								equipment = torch
 							}
 							penalty += 7
-						}
-						if currentCoordinate.equipment == gear && currentCoordinate.y+y == targetY && currentCoordinate.x+x == targetX {
+						} else if currentCoordinate.equipment == gear && currentCoordinate.y+y == targetY && currentCoordinate.x+x == targetX {
 							equipment = torch
 							penalty += 7
 						}
@@ -255,16 +253,16 @@ func findRoute() []coordinate {
 						}
 					}
 
-					stepsToGo := int(math.Abs(float64((currentCoordinate.y+y)-targetY))) + int(math.Abs(float64((currentCoordinate.x+x)-targetX)))
+					//stepsToGo := int(math.Abs(float64((currentCoordinate.y+y)-targetY))) + int(math.Abs(float64((currentCoordinate.x+x)-targetX)))
 
 					for o := 0; o < len(openList); o++ {
 						if openList[o].y == currentCoordinate.y+y && openList[o].x == currentCoordinate.x+x {
 							// Check if this coordinate has been reached before with more steps. If so update the coordinate in the open list
-							if currentCoordinate.stepsTaken+1+penalty < openList[o].stepsTaken {
+							if currentCoordinate.stepsTaken + 1 + penalty < openList[o].stepsTaken {
 								openList[o].parent = &currentCoordinate
-								openList[o].priority = currentCoordinate.stepsTaken + 1 + penalty + stepsToGo
+								//openList[o].priority = currentCoordinate.stepsTaken + 1 + penalty + stepsToGo
 								openList[o].stepsTaken = currentCoordinate.stepsTaken + 1 + penalty
-								openList[o].stepsToGo = stepsToGo
+								//openList[o].stepsToGo = stepsToGo
 								openList[o].equipment = equipment
 
 							}
@@ -275,11 +273,12 @@ func findRoute() []coordinate {
 					for c := 0; c < len(closedList); c++ {
 						if closedList[c].y == currentCoordinate.y+y && closedList[c].x == currentCoordinate.x+x {
 							// Check if this coordinate has been reached before with more steps. If so update the coordinate and re-add it to the open list
-							if currentCoordinate.stepsTaken+1+penalty < closedList[c].stepsTaken {
+							
+							if currentCoordinate.stepsTaken + 1 + penalty < closedList[c].stepsTaken {
 								closedList[c].parent = &currentCoordinate
-								closedList[c].priority = currentCoordinate.stepsTaken + 1 + penalty + stepsToGo
+								//closedList[c].priority = currentCoordinate.stepsTaken + 1 + penalty + stepsToGo
 								closedList[c].stepsTaken = currentCoordinate.stepsTaken + 1 + penalty
-								closedList[c].stepsToGo = stepsToGo
+								//closedList[c].stepsToGo = stepsToGo
 								closedList[c].equipment = equipment
 								openList = append(openList, closedList[c])
 								closedList = append(closedList[:c], closedList[c+1:]...)
@@ -290,11 +289,11 @@ func findRoute() []coordinate {
 
 					newCoordinate := coordinate{
 						parent:     &currentCoordinate,
-						y:          currentCoordinate.y + y,
-						x:          currentCoordinate.x + x,
-						priority:   currentCoordinate.stepsTaken + 1 + penalty + stepsToGo,
+						y:          currentCoordinate.y+y,
+						x:          currentCoordinate.x+x,
+						//priority:   currentCoordinate.stepsTaken + 1 + penalty + stepsToGo,
 						stepsTaken: currentCoordinate.stepsTaken + 1 + penalty,
-						stepsToGo:  stepsToGo,
+						//stepsToGo:  stepsToGo,
 						equipment:  equipment,
 					}
 
@@ -305,12 +304,22 @@ func findRoute() []coordinate {
 		}
 
 	}
+	
+	fmt.Println(len(closedList))
+	for c := 0; c < len(closedList); c++ {
+		if closedList[c].y == targetY && closedList[c].x == targetX {
+			fmt.Println("hier", closedList[c].stepsTaken)
+/*
+			route := []coordinate{}
+			for closedList[c].parent != nil {
+				route = append(route, closedList[c])
+				closedList[c] = *closedList[c].parent
+			}
+			return route
+*/		
+		}
+	}
 
-	/*if len(routes) > 0 {
-		sort.Sort(byLength(routes))
-		return routes[1]
-	}*/
-
-	return routes[0]
+	return []coordinate{}
 
 }

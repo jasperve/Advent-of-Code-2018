@@ -83,6 +83,8 @@ func main() {
 			}
 		}
 
+		fmt.Println(possibleX, possibleY, possibleZ)
+
 		minX = (possibleX - 3) * multiplyBy
 		maxX = (possibleX + 3) * multiplyBy
 		minY = (possibleY - 3) * multiplyBy

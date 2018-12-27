@@ -11,13 +11,13 @@ const (
 	wet    = 1
 	narrow = 2
 
-	caveDepth = 510 //7740
+	caveDepth = 7740 //11109 //510 //7740
 	beginY    = 0
 	beginX    = 0
-	endY      = 12 //800 //12
-	endX      = 12 //50 //12
-	targetY   = 10 //763
-	targetX   = 10 //12
+	endY      = 800 //800 //12
+	endX      = 50 //50 //12
+	targetY   = 763 //731 //10 //763
+	targetX   = 12 //9 //10 //12
 
 	neither = 0
 	torch   = 1
@@ -34,7 +34,7 @@ type coordinate struct {
 	y                 int
 	x                 int
 	stepsTaken        int
-	possibleEquipment map[int]struct{}
+	equipment		  int
 }
 type byStepsTaken []coordinate
 
@@ -67,7 +67,7 @@ func main() {
 	cave = make(map[int]map[int]*region)
 	createCave(beginY, beginX, endY, endX)
 	fmt.Println("Total risk is:", calculateRisc())
-	findRoute()
+	fmt.Println("Number of minutes is:", findRoute())
 
 }
 
@@ -141,9 +141,9 @@ func printCave() {
 	}
 }
 
-func findRoute() []coordinate {
+func findRoute() int {
 
-	startCoordinate := coordinate{y: 0, x: 0, possibleEquipment: map[int]struct{}{ torch: struct{}{} } }
+	startCoordinate := coordinate{y: 0, x: 0, equipment: torch }
 	openList := []coordinate{}
 	openList = append(openList, startCoordinate)
 	closedList := []coordinate{}
@@ -155,111 +155,54 @@ func findRoute() []coordinate {
 		//Get the heighest priority coordinate from the open list and add it to the closed list
 		currentCoordinate := openList[0]
 		openList = append([]coordinate{}, openList[1:]...)
+		
+		if currentCoordinate.y == targetY && currentCoordinate.x == targetX && currentCoordinate.equipment == torch {
+			return currentCoordinate.stepsTaken
+		}
+
+		for c := 0; c < len(closedList); c++ {
+			if closedList[c].y == currentCoordinate.y && closedList[c].x == currentCoordinate.x && closedList[c].equipment == currentCoordinate.equipment {
+				continue
+			}
+		}
 		closedList = append(closedList, currentCoordinate)
 
+		for e := 0; e <=2; e++ {
+			if cave[currentCoordinate.y][currentCoordinate.x].class == rocky && (e == torch || e == gear) ||
+			cave[currentCoordinate.y][currentCoordinate.x].class == wet && (e == neither || e == gear) ||
+			cave[currentCoordinate.y][currentCoordinate.x].class == narrow && (e == neither || e == torch) {
+			
+				newCoordinate := coordinate{
+					y:                 currentCoordinate.y,
+					x:                 currentCoordinate.x,
+					stepsTaken:        currentCoordinate.stepsTaken + 7,
+					equipment:		   e,
+				}
+				openList = append(openList, newCoordinate)	
+			
+			}
+		}
+
 		for y := -1; y <= 1; y++ {
-		XLOOP:
+			XLOOP:
 			for x := -1; x <= 1; x++ {
 				if (y == -1 && x == 0) || (y == 0 && (x == -1 || x == 1)) || (y == 1 && x == 0) {
 
 					if _, ok := cave[currentCoordinate.y+y][currentCoordinate.x+x]; !ok {
 						continue XLOOP
 					}
-
-					for c := 0; c < len(closedList); c++ {
-						if closedList[c].y == currentCoordinate.y+y && closedList[c].x == currentCoordinate.x+x {
-							continue XLOOP
+	
+					if cave[currentCoordinate.y+y][currentCoordinate.x+x].class == rocky && (currentCoordinate.equipment == torch || currentCoordinate.equipment == gear) ||
+					cave[currentCoordinate.y+y][currentCoordinate.x+x].class == wet && (currentCoordinate.equipment == neither || currentCoordinate.equipment == gear) ||
+					cave[currentCoordinate.y+y][currentCoordinate.x+x].class == narrow && (currentCoordinate.equipment == neither || currentCoordinate.equipment == torch) {
+						newCoordinate := coordinate{
+							y:                 currentCoordinate.y + y,
+							x:                 currentCoordinate.x + x,
+							stepsTaken:        currentCoordinate.stepsTaken + 1,
+							equipment:		   currentCoordinate.equipment,
 						}
+						openList = append(openList, newCoordinate)
 					}
-
-					possibleEquipment := map[int]struct{}{}
-					penalty := 0
-
-					
-					if currentCoordinate.y+y == 11 &&currentCoordinate.x+x == 10 { 	fmt.Println("hier: 1", currentCoordinate.possibleEquipment)	}
-
-					switch cave[currentCoordinate.y+y][currentCoordinate.x+x].class {
-					case rocky:
-						if cave[currentCoordinate.y][currentCoordinate.x].class == rocky {
-							possibleEquipment = currentCoordinate.possibleEquipment
-							if currentCoordinate.y+y == 11 &&currentCoordinate.x+x == 10 { 	fmt.Println("hier: 10")	}
-						} else if cave[currentCoordinate.y][currentCoordinate.x].class == wet {
-							if currentCoordinate.y+y == 11 &&currentCoordinate.x+x == 10 { 	fmt.Println("hier: 2")	}
-							possibleEquipment[gear] = struct{}{}
-							if !possibleEquipmentContains(currentCoordinate.possibleEquipment, gear) {
-								penalty += 7
-							}
-						} else if cave[currentCoordinate.y][currentCoordinate.x].class == narrow {
-							if currentCoordinate.y+y == 11 &&currentCoordinate.x+x == 10 { 	fmt.Println("hier: 3")	}
-							possibleEquipment[torch] = struct{}{}
-							if !possibleEquipmentContains(currentCoordinate.possibleEquipment, torch) {
-								penalty += 7
-							}
-						}
-						if !possibleEquipmentContains(possibleEquipment, torch) && currentCoordinate.y+y == targetY && currentCoordinate.x+x == targetX {
-							if currentCoordinate.y+y == 11 &&currentCoordinate.x+x == 10 { 	fmt.Println("hier: 4")	}
-							possibleEquipment[torch] = struct{}{}
-							penalty += 7
-						}
-					case wet:
-						if cave[currentCoordinate.y][currentCoordinate.x].class == wet {
-							possibleEquipment = currentCoordinate.possibleEquipment
-						} else if cave[currentCoordinate.y][currentCoordinate.x].class == rocky {
-							if currentCoordinate.y+y == 11 &&currentCoordinate.x+x == 10 { 	fmt.Println("hier: 5")	}
-							possibleEquipment[gear] = struct{}{}
-							if !possibleEquipmentContains(currentCoordinate.possibleEquipment, gear) {
-								penalty += 7
-							}
-						} else if cave[currentCoordinate.y][currentCoordinate.x].class == narrow {
-							if currentCoordinate.y+y == 11 &&currentCoordinate.x+x == 10 { 	fmt.Println("hier: 6")	}
-							possibleEquipment[neither] = struct{}{}
-							if !possibleEquipmentContains(currentCoordinate.possibleEquipment, neither) {
-								penalty += 7
-							}
-						}
-					case narrow:
-						if cave[currentCoordinate.y][currentCoordinate.x].class == narrow {
-							possibleEquipment = currentCoordinate.possibleEquipment
-						} else if cave[currentCoordinate.y][currentCoordinate.x].class == rocky {
-							if currentCoordinate.y+y == 11 &&currentCoordinate.x+x == 10 { 	fmt.Println("hier: 7")	}
-							possibleEquipment[torch] = struct{}{}
-							if !possibleEquipmentContains(currentCoordinate.possibleEquipment, torch) {
-								penalty += 7
-							}
-						} else if cave[currentCoordinate.y][currentCoordinate.x].class == wet {
-							possibleEquipment[neither] = struct{}{}
-							if currentCoordinate.y+y == 11 &&currentCoordinate.x+x == 10 { 	fmt.Println("hier: 8")	}
-							if !possibleEquipmentContains(currentCoordinate.possibleEquipment, neither) {
-								penalty += 7
-							}
-						}
-					}
-
-					for o := 0; o < len(openList); o++ {
-						if openList[o].y == currentCoordinate.y+y && openList[o].x == currentCoordinate.x+x {
-							if currentCoordinate.stepsTaken+1+penalty < openList[o].stepsTaken {
-								openList[o].stepsTaken = currentCoordinate.stepsTaken + 1 + penalty
-								openList[o].possibleEquipment = possibleEquipment
-							} else if currentCoordinate.stepsTaken+1+penalty == openList[o].stepsTaken {
-								if currentCoordinate.y+y == 11 &&currentCoordinate.x+x == 10 { 	fmt.Println("hier dan?")	}
-								for k, v := range possibleEquipment {
-									if currentCoordinate.y+y == 11 &&currentCoordinate.x+x == 10 { 	fmt.Println("hier blaat:", k)	}
-									openList[o].possibleEquipment[k] = v
-								}
-							}
-							continue XLOOP
-						}
-					}
-
-					newCoordinate := coordinate{
-						y:                 currentCoordinate.y + y,
-						x:                 currentCoordinate.x + x,
-						stepsTaken:        currentCoordinate.stepsTaken + 1 + penalty,
-						possibleEquipment: possibleEquipment,
-					}
-
-					if currentCoordinate.y+y == 11 &&currentCoordinate.x+x == 10 { 	fmt.Println(newCoordinate)	}
-					openList = append(openList, newCoordinate)
 
 				}
 			}
@@ -267,41 +210,7 @@ func findRoute() []coordinate {
 
 	}
 
-	
-	for y := 0; y <= endY; y++ {
-		for x := 0; x <= endX; x++ {
-			for c := 0; c < len(closedList); c++ {
-				if closedList[c].y == y && closedList[c].x == x {
-					fmt.Printf("%v (", closedList[c].stepsTaken)
-					for k := range closedList[c].possibleEquipment {
-						fmt.Printf("%v", k)
-					}
-					fmt.Printf(")\t")
-				}
-			}
-		}
-		fmt.Printf("\n")
-	}
-	
-	for c := 0; c < len(closedList); c++ {
-		if closedList[c].y == 11 && closedList[c].x == 10 {
-			fmt.Printf("HIER: %v (", closedList[c].stepsTaken)
-			for k := range closedList[c].possibleEquipment {
-				fmt.Printf("%v", k)
-			}
-			fmt.Printf(")\t")
-		}
-	}
-
-
-
-	for c := 0; c < len(closedList); c++ {
-		if closedList[c].y == targetY && closedList[c].x == targetX {
-			fmt.Println("steps needed:", closedList[c].stepsTaken)
-		}
-	}
-
-	return []coordinate{}
+	return -1
 
 }
 

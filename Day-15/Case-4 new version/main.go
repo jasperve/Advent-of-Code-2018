@@ -241,7 +241,7 @@ func main() {
 
 					for r := len(routes)-1; r >= 0; r-- {
 						if routes[r][len(routes[r])-1].y != routes[0][len(routes[0])-1].y && routes[r][len(routes[r])-1].x != routes[0][len(routes[0])-1].x {
-							routes = append(routes[:r], routes[r+1:]..
+							routes = append(routes[:r], routes[r+1:]...)
 						}
 					}
 

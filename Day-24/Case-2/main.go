@@ -29,7 +29,8 @@ func (c byEffectivePowerAndInitiative) Swap(i, j int) {
 	c[i], c[j] = c[j], c[i]
 }
 func (c byEffectivePowerAndInitiative) Less(i, j int) bool {
-	return c[i].units*c[i].attackDamage > c[j].units*c[j].attackDamage || (c[i].units*c[i].attackDamage == c[j].units*c[j].attackDamage && c[i].initiative > c[j].initiative)
+	return c[i].units*c[i].attackDamage > c[j].units*c[j].attackDamage ||
+		(c[i].units*c[i].attackDamage == c[j].units*c[j].attackDamage && c[i].initiative > c[j].initiative)
 }
 
 type action struct {
@@ -70,7 +71,7 @@ func main() {
 			attackDamage, _ := strconv.Atoi(subsection[4])
 			initiative, _ := strconv.Atoi(subsection[6])
 
-			newGroup := group {
+			newGroup := group{
 				system:       section[1],
 				units:        units,
 				hitpoints:    hitpoints,
@@ -106,26 +107,24 @@ func main() {
 
 	boost := 0
 
-	OUTER:
-	for boost < 2000 {
+OUTER:
+	for {
 
 		groups := []*group{}
 
 		for g := 0; g < len(groupsOriginal); g++ {
-			
-			newGroup := group {
+
+			newGroup := group{
 				system:       groupsOriginal[g].system,
 				units:        groupsOriginal[g].units,
 				hitpoints:    groupsOriginal[g].hitpoints,
 				attackDamage: groupsOriginal[g].attackDamage,
 				attackType:   groupsOriginal[g].attackType,
 				initiative:   groupsOriginal[g].initiative,
-
 			}
-			
 			newGroup.immunities = make(map[string]bool)
 			newGroup.weaknesses = make(map[string]bool)
-			
+
 			for k := range groupsOriginal[g].immunities {
 				newGroup.immunities[k] = true
 			}
@@ -139,7 +138,7 @@ func main() {
 			groups = append(groups, &newGroup)
 
 		}
-	
+
 		for {
 
 			actions := []action{}
@@ -150,7 +149,7 @@ func main() {
 				pickedGroupDamage := -1
 				var pickedGroup *group
 
-				DEFENDERLOOP:
+			DEFENDERLOOP:
 				for d := 0; d < len(groups); d++ {
 					if groups[a].system == groups[d].system {
 						continue
@@ -169,10 +168,13 @@ func main() {
 						damage *= 2
 					}
 
-					if damage > pickedGroupDamage ||
-						(damage == pickedGroupDamage && groups[d].units*groups[d].attackDamage > pickedGroup.units*pickedGroup.attackDamage) ||
-						(damage == pickedGroupDamage && groups[d].units*groups[d].attackDamage == pickedGroup.units*pickedGroup.attackDamage && groups[d].initiative > pickedGroup.initiative) {
-
+					if damage > pickedGroupDamage {
+						pickedGroup = groups[d]
+						pickedGroupDamage = damage
+					} else if damage == pickedGroupDamage && groups[d].units*groups[d].attackDamage > pickedGroup.units*pickedGroup.attackDamage {
+						pickedGroup = groups[d]
+						pickedGroupDamage = damage
+					} else if damage == pickedGroupDamage && groups[d].units*groups[d].attackDamage == pickedGroup.units*pickedGroup.attackDamage && groups[d].initiative > pickedGroup.initiative {
 						pickedGroup = groups[d]
 						pickedGroupDamage = damage
 					}
@@ -193,7 +195,9 @@ func main() {
 			sort.Sort(byInitiativeAttacker(actions))
 			for a := 0; a < len(actions); a++ {
 
-				if actions[a].attacker.units <= 0 { continue }
+				if actions[a].attacker.units <= 0 {
+					continue
+				}
 
 				damage := actions[a].attacker.units * actions[a].attacker.attackDamage
 				if _, ok := actions[a].defender.immunities[actions[a].attacker.attackType]; ok {
@@ -205,7 +209,7 @@ func main() {
 
 				amountUnitsHealthy, amountUnitsWounded := ((actions[a].defender.units*actions[a].defender.hitpoints)-damage)/actions[a].defender.hitpoints,
 					((actions[a].defender.units*actions[a].defender.hitpoints)-damage)%actions[a].defender.hitpoints
-	
+
 				if amountUnitsWounded > 0 {
 					amountUnitsHealthy++
 				}
@@ -227,7 +231,7 @@ func main() {
 				amountUnitsAfter += groups[g].units
 			}
 
-			if amountUnitsBefore == amountUnitsAfter { 
+			if amountUnitsBefore == amountUnitsAfter {
 				fmt.Printf("Boosting immune system with %v results in a continuous loop!\n", boost)
 				boost++
 				break
@@ -256,7 +260,7 @@ func main() {
 				boost++
 				break OUTER
 			}
-			
+
 		}
 
 	}

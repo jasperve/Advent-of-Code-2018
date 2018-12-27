@@ -162,19 +162,15 @@ OUTER:
 
 					damage := groups[a].units * groups[a].attackDamage
 					if _, ok := groups[d].immunities[groups[a].attackType]; ok {
-						damage = 0
+						damage = -1
 					}
 					if _, ok := groups[d].weaknesses[groups[a].attackType]; ok {
 						damage *= 2
 					}
 
-					if damage > pickedGroupDamage {
-						pickedGroup = groups[d]
-						pickedGroupDamage = damage
-					} else if damage == pickedGroupDamage && groups[d].units*groups[d].attackDamage > pickedGroup.units*pickedGroup.attackDamage {
-						pickedGroup = groups[d]
-						pickedGroupDamage = damage
-					} else if damage == pickedGroupDamage && groups[d].units*groups[d].attackDamage == pickedGroup.units*pickedGroup.attackDamage && groups[d].initiative > pickedGroup.initiative {
+					if damage > pickedGroupDamage ||
+						(damage > -1 && damage == pickedGroupDamage && groups[d].units*groups[d].attackDamage > pickedGroup.units*pickedGroup.attackDamage) ||
+						(damage > -1 && damage == pickedGroupDamage && groups[d].units*groups[d].attackDamage == pickedGroup.units*pickedGroup.attackDamage && groups[d].initiative > pickedGroup.initiative) {
 						pickedGroup = groups[d]
 						pickedGroupDamage = damage
 					}

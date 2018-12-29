@@ -35,17 +35,17 @@ type coordinate struct {
 	stepsTaken        int
 	equipment		  int
 }
-type byStepsTaken []coordinate
-func (c byStepsTaken) Len() int {
+
+type coordinateSlice []*coordinate
+func (c coordinateSlice) Len() int {
 	return len(c)
 }
-func (c byStepsTaken) Swap(i, j int) {
+func (c coordinateSlice) Swap(i, j int) {
 	c[i], c[j] = c[j], c[i]
 }
-func (c byStepsTaken) Less(i, j int) bool {
-	return c[i].stepsTaken < c[j].stepsTaken || (c[i].stepsTaken == c[j].stepsTaken && c[i].equipment < c[j].equipment)
+func (c coordinateSlice) Less(i, j int) bool {
+	return c[i].stepsTaken < c[j].stepsTaken
 }
-
 
 var cave map[int]map[int]*region
 
@@ -106,37 +106,41 @@ func createCave(fromY int, fromX int, tillY int, tillX int) {
 func findRoute() int {
 
 	startCoordinate := coordinate{y: 0, x: 0, stepsTaken: 0, equipment: torch }
-	openList := []coordinate{}
-	openList = append(openList, startCoordinate)
+	openList := make(map[string]*coordinate)
+	openList[fmt.Sprintf("%v-%v-%v", startCoordinate.y, startCoordinate.x, startCoordinate.equipment)] = &startCoordinate
 	closedList := make(map[string]*coordinate)
-	
-	counter := 0
 
 	for len(openList) > 0 {
-	
-		counter++
 
-		sort.Sort(byStepsTaken(openList))
-		currentCoordinate := openList[0]
-		openList = append([]coordinate{}, openList[1:]...)
+		openListSlice := make(coordinateSlice, 0, len(openList))
+		for _, c := range openList {
+			openListSlice = append(openListSlice, c)
+		}       
+		sort.Sort(openListSlice)
+
+		for ols := 0; ols < len(openListSlice); ols++ {
+			fmt.Println(openListSlice[ols].y, openListSlice[ols].x, openListSlice[ols].stepsTaken, openListSlice[ols].equipment)
+		}
+
+		currentCoordinate := openListSlice[0]
+		delete(openList, fmt.Sprintf("%v-%v-%v-%v", currentCoordinate.y, currentCoordinate.x, currentCoordinate.stepsTaken, currentCoordinate.equipment))
 	
 		if currentCoordinate.y == targetY && currentCoordinate.x == targetX && currentCoordinate.equipment == torch {
 			return currentCoordinate.stepsTaken
 		}
 
 		if _, ok := closedList[fmt.Sprintf("%v-%v-%v", currentCoordinate.y, currentCoordinate.x, currentCoordinate.equipment)]; ok {
-			fmt.Println("ooit hier?")
 			continue
 		}
 
-		closedList[fmt.Sprintf("%v-%v-%v", currentCoordinate.y, currentCoordinate.x, currentCoordinate.equipment)] = &currentCoordinate
+		closedList[fmt.Sprintf("%v-%v-%v", currentCoordinate.y, currentCoordinate.x, currentCoordinate.equipment)] = currentCoordinate
 
-		for e := 0; e <=2; e++ {
-			if (cave[currentCoordinate.y][currentCoordinate.x].class == rocky && (e == torch || e == gear)) ||
-				(cave[currentCoordinate.y][currentCoordinate.x].class == wet && (e == neither || e == gear)) ||
-				(cave[currentCoordinate.y][currentCoordinate.x].class == narrow && (e == neither || e == torch)) {
+		for equipment := 0; equipment <=2; equipment++ {
+			if (cave[currentCoordinate.y][currentCoordinate.x].class == rocky && (equipment == torch || equipment == gear)) ||
+				(cave[currentCoordinate.y][currentCoordinate.x].class == wet && (equipment == neither || equipment == gear)) ||
+				(cave[currentCoordinate.y][currentCoordinate.x].class == narrow && (equipment == neither || equipment == torch)) {
 			
-				if _, ok := closedList[fmt.Sprintf("%v-%v-%v", currentCoordinate.y, currentCoordinate.x, e)]; ok {
+				if _, ok := closedList[fmt.Sprintf("%v-%v-%v", currentCoordinate.y, currentCoordinate.x, equipment)]; ok {
 					continue
 				}
 
@@ -144,13 +148,19 @@ func findRoute() int {
 					y:                 currentCoordinate.y,
 					x:                 currentCoordinate.x,
 					stepsTaken:        currentCoordinate.stepsTaken + 7,
-					equipment:		   e,
+					equipment:		   equipment,
 				}
-				openList = append(openList, newCoordinate)	
+
+				if v, ok := openList[fmt.Sprintf("%v-%v-%v-%v", currentCoordinate.y, currentCoordinate.x, currentCoordinate.stepsTaken + 7, equipment)]; ok {
+					if v.stepsTaken < currentCoordinate.stepsTaken + 7 {
+						continue
+					}
+				}
+				openList[fmt.Sprintf("%v-%v-%v-%v", currentCoordinate.y, currentCoordinate.x, currentCoordinate.stepsTaken + 7, equipment)] = &newCoordinate	
 			}
 
 		}
-		
+
 		for y := -1; y <= 1; y++ {
 			for x := -1; x <= 1; x++ {
 				if (y == -1 && x == 0) || (y == 0 && (x == -1 || x == 1)) || (y == 1 && x == 0) {
@@ -173,19 +183,18 @@ func findRoute() int {
 							stepsTaken:        currentCoordinate.stepsTaken + 1,
 							equipment:		   currentCoordinate.equipment,
 						}
-						openList = append(openList, newCoordinate)
-					
+						if v, ok := openList[fmt.Sprintf("%v-%v-%v-%v", currentCoordinate.y + y, currentCoordinate.x + x, currentCoordinate.stepsTaken + 1, currentCoordinate.equipment)]; ok {
+							if v.stepsTaken < currentCoordinate.stepsTaken + 1 {
+								continue
+							}
+						}
+						openList[fmt.Sprintf("%v-%v-%v-%v", currentCoordinate.y + y, currentCoordinate.x + x, currentCoordinate.stepsTaken + 1, currentCoordinate.equipment)] = &newCoordinate	
+						
 					}
 
 				}
 			}
 		}
-
-		if counter == 3 {
-			fmt.Println(openList)
-			break
-		}
-
 
 	}
 

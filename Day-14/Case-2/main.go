@@ -10,7 +10,7 @@ type recipe struct {
 	right *recipe
 }
 
-var recipeRange = []int{9, 9, 0, 9, 4, 1}
+var recipeRange = []int{5, 4, 0, 5, 6, 1}
 
 func main() {
 

@@ -10,13 +10,13 @@ const (
 	wet    = 1
 	narrow = 2
 
-	caveDepth = 7740
+	caveDepth = 11739 //7740
 	beginY    = 0
 	beginX    = 0
-	endY      = 813
-	endX      = 62
-	targetY   = 763
-	targetX   = 12
+	endY      = 1000
+	endX      = 100
+	targetY   = 718 //763
+	targetX   = 11 //12
 
 	neither = 0
 	torch   = 1
@@ -65,7 +65,7 @@ func main() {
 
 	cave = make(map[int]map[int]*region)
 	createCave(beginY, beginX, endY, endX)
-	//fmt.Println("Total risk is:", calculateRisc())
+	fmt.Println("Total risk is:", calculateRisc())
 	fmt.Println("Number of minutes is:", findRoute())
 
 }
@@ -140,7 +140,7 @@ func printCave() {
 
 func findRoute() int {
 
-	startCoordinate := coordinate{y: 0, x: 0, equipment: torch }
+	startCoordinate := coordinate{y: 0, x: 0, stepsTaken: 0, equipment: torch }
 	openList := []coordinate{}
 	openList = append(openList, startCoordinate)
 	closedList := make(map[string]*coordinate)
@@ -148,8 +148,6 @@ func findRoute() int {
 	for len(openList) > 0 {
 	
 		sort.Sort(byStepsTaken(openList))
-
-		//Get the heighest priority coordinate from the open list and add it to the closed list
 		currentCoordinate := openList[0]
 		openList = append([]coordinate{}, openList[1:]...)
 		
@@ -163,23 +161,11 @@ func findRoute() int {
 		
 		closedList[fmt.Sprintf("%v-%v-%v", currentCoordinate.y, currentCoordinate.x, currentCoordinate.equipment)] = &currentCoordinate
 
-		EQUIPMENTLOOP:
 		for e := 0; e <=2; e++ {
 			if (cave[currentCoordinate.y][currentCoordinate.x].class == rocky && (e == torch || e == gear)) ||
 			(cave[currentCoordinate.y][currentCoordinate.x].class == wet && (e == neither || e == gear)) ||
 			(cave[currentCoordinate.y][currentCoordinate.x].class == narrow && (e == neither || e == torch)) {
 			
-				for o := 0; o < len(openList); o++ {
-					if openList[o].y == currentCoordinate.y && 
-					openList[o].x == currentCoordinate.x && 
-					openList[o].equipment == currentCoordinate.equipment && 
-					openList[o].stepsTaken < currentCoordinate.stepsTaken + 7 {
-
-						openList[o].stepsTaken = currentCoordinate.stepsTaken + 7
-						continue EQUIPMENTLOOP
-					}
-				}
-
 				newCoordinate := coordinate{
 					y:                 currentCoordinate.y,
 					x:                 currentCoordinate.x,
@@ -192,7 +178,6 @@ func findRoute() int {
 		}
 
 		for y := -1; y <= 1; y++ {
-			XLOOP:
 			for x := -1; x <= 1; x++ {
 				if (y == -1 && x == 0) || (y == 0 && (x == -1 || x == 1)) || (y == 1 && x == 0) {
 
@@ -207,17 +192,6 @@ func findRoute() int {
 					if (cave[currentCoordinate.y+y][currentCoordinate.x+x].class == rocky && (currentCoordinate.equipment == torch || currentCoordinate.equipment == gear)) ||
 					(cave[currentCoordinate.y+y][currentCoordinate.x+x].class == wet && (currentCoordinate.equipment == neither || currentCoordinate.equipment == gear)) ||
 					(cave[currentCoordinate.y+y][currentCoordinate.x+x].class == narrow && (currentCoordinate.equipment == neither || currentCoordinate.equipment == torch)) {
-
-						for o := 0; o < len(openList); o++ {
-							if openList[o].y == currentCoordinate.y+y && 
-							openList[o].x == currentCoordinate.x+x && 
-							openList[o].equipment == currentCoordinate.equipment && 
-							openList[o].stepsTaken < currentCoordinate.stepsTaken + 1 {
-							
-								openList[o].stepsTaken = currentCoordinate.stepsTaken + 1
-								continue XLOOP
-							}
-						}
 
 						newCoordinate := coordinate{
 							y:                 currentCoordinate.y + y,
@@ -237,11 +211,4 @@ func findRoute() int {
 
 	return -1
 
-}
-
-func possibleEquipmentContains(currentEquipment map[int]struct{}, equipment int) bool {
-	if _, ok := currentEquipment[equipment]; ok {
-		return true
-	}
-	return false
 }

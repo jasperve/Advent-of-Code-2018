@@ -28,6 +28,16 @@ func (c byXY) Swap(i, j int) {
 func (c byXY) Less(i, j int) bool {
 	return c[i].y < c[j].y || (c[i].y == c[j].y && c[i].x < c[j].x)
 }
+type byHitPointsAndXY []coordinate
+func (c byHitPointsAndXY) Len() int {
+	return len(c)
+}
+func (c byHitPointsAndXY) Swap(i, j int) {
+	c[i], c[j] = c[j], c[i]
+}
+func (c byHitPointsAndXY) Less(i, j int) bool {
+	return players[c[i]].hitPoints < players[c[j]].hitPoints || ((players[c[i]].hitPoints == players[c[j]].hitPoints) && c[i].y < c[j].y || (c[i].y == c[j].y && c[i].x < c[j].x))
+}
 
 type player struct {
 	class int
@@ -54,6 +64,9 @@ func (c byStepsAndXY) Less(i, j int) bool {
 
 var board map[coordinate]int
 var players map[coordinate]*player
+var neighbours = []coordinate{ coordinate{x: 0, y: -1}, coordinate{x: -1, y: 0}, coordinate{x: 1, y: 0}, coordinate{x: 0, y: 1}}
+
+var maxX, maxY int
 
 func main() {
 
@@ -64,7 +77,13 @@ func main() {
 
 	input := bufio.NewScanner(file)
 	for y := 0; input.Scan(); y++ {
+		if y > maxY {
+			maxY = y
+		}
 		for x, u := range input.Text() {
+			if x > maxX {
+				maxX = x
+			}
 			switch u {
 			case 35: // WALL FOUND
 				board[coordinate{x,y}] = wall
@@ -79,6 +98,8 @@ func main() {
 		}
 	}
 
+	round := 0
+
 	for {
 
 		var playersKeys []coordinate
@@ -89,23 +110,56 @@ func main() {
 	
 		for _, k := range playersKeys {
 			
-			targets := findTargets(k)
-			fmt.Println(targets)
+			if _, ok := players[k]; !ok { 
+				continue 
+			}
 
-			break
+			route := locateTarget(k)
+			
+			if len(route) > 1 {
+				players[route[1]] = players[k]
+				delete(players, k)
+			}
+
+			if len(route) == 1 || len(route) == 2 {
+
+				if len(route) == 2 {
+					k = route[1]
+				}
+				
+				if attackTarget(k) {
+				
+					elfsFound := false
+					goblinsFound := false
+
+					totalHitPoints := 0
+					for _, p := range players {
+						if p.class == elf { elfsFound = true }
+						if p.class == goblin { goblinsFound = true }
+						totalHitPoints += p.hitPoints
+					}
+					
+					if !elfsFound || !goblinsFound {
+						fmt.Println("hitpoints left", totalHitPoints)
+						fmt.Println("hitpoints * round: ", totalHitPoints*round)
+						return
+					}
+
+				}
+
+			}
 
 		}
 
-		break
+		round++
 
 	}
 
 }
 
 
-func findTargets(startLocation coordinate) []*node {
+func locateTarget(startLocation coordinate) (route []coordinate) {
 	
-	neighbourNodes := []coordinate{ coordinate{x: 0, y: -1}, coordinate{x: -1, y: 0}, coordinate{x: 1, y: 0}, coordinate{x: 0, y: 1}}
 	startNode := node { location: startLocation, steps: 0 }
 	openList := []*node{}
 	openList = append(openList, &startNode)
@@ -141,10 +195,10 @@ func findTargets(startLocation coordinate) []*node {
 		}
 
 		NEIGHBOURLOOP:
-		for _, neighbourNode := range neighbourNodes {
+		for _, neighbour := range neighbours {
 
 			// If the coordinate has already been marked as closed
-			if foundNode, ok := closedList[ coordinate { currentNode.location.x + neighbourNode.x, currentNode.location.y + neighbourNode.y }]; ok {
+			if foundNode, ok := closedList[ coordinate { currentNode.location.x + neighbour.x, currentNode.location.y + neighbour.y }]; ok {
 				if currentNode.steps + 1 < foundNode.steps {
 					foundNode.parent = currentNode
 					foundNode.steps = currentNode.steps + 1
@@ -153,7 +207,7 @@ func findTargets(startLocation coordinate) []*node {
 			}
 
 			for o := 0; o < len(openList); o++ {
-				if openList[o].location.x == currentNode.location.x + neighbourNode.x && openList[o].location.y == currentNode.location.y + neighbourNode.y {
+				if openList[o].location.x == currentNode.location.x + neighbour.x && openList[o].location.y == currentNode.location.y + neighbour.y {
 
 					// Check if this coordinate has been reached before with more steps. If so update the coordinate in the open list
 					if currentNode.steps + 1 < openList[o].steps {
@@ -166,7 +220,7 @@ func findTargets(startLocation coordinate) []*node {
 
 			newNode := node { 
 				parent: currentNode,
-				location: coordinate { currentNode.location.x + neighbourNode.x, currentNode.location.y + neighbourNode.y },
+				location: coordinate { currentNode.location.x + neighbour.x, currentNode.location.y + neighbour.y },
 				steps: currentNode.steps + 1,
 			}
 
@@ -177,18 +231,67 @@ func findTargets(startLocation coordinate) []*node {
 	}
 
 	if len(targetList) > 0 {
-		
 		sort.Sort(byStepsAndXY(targetList))
+		parent := targetList[0].parent
+		for parent != nil {
+			route = append([]coordinate{ coordinate{ parent.location.x, parent.location.y } }, route...)
+			parent = parent.parent
+		}
+	}
 		
+	return route
 
-	if len
-	fmt.Println(targetList[0])
-	/*parent := closedList[coordinate{22,9}].parent
-	for parent != nil {
-		fmt.Println(parent.location.x, parent.location.y)
-		parent = parent.parent
-	}*/
+}
 
-	return nil
+
+func attackTarget(attackerLocation coordinate) bool {
+
+	targetLocations := []coordinate{}
+
+	for _, neighbour := range neighbours {
+		if _, ok := players[ coordinate{ attackerLocation.x + neighbour.x, attackerLocation.y + neighbour.y } ]; ok {
+			if players[attackerLocation].class != players[ coordinate{ attackerLocation.x + neighbour.x, attackerLocation.y + neighbour.y } ].class { 
+				targetLocations = append(targetLocations, coordinate{ attackerLocation.x + neighbour.x, attackerLocation.y + neighbour.y })
+			}
+		}
+	}
+
+	if len(targetLocations) != 0 { 
+
+		sort.Sort(byHitPointsAndXY(targetLocations))
+		players[targetLocations[0]].hitPoints -= players[attackerLocation].attackPower
+		if players[targetLocations[0]].hitPoints < 0 {
+			delete(players, targetLocations[0])
+			return true
+		}
+
+	}
+
+	return false
+
+}
+
+
+func printBoard() {
+
+	for y := 0; y <= maxY; y++ {
+		for x := 0; x <=maxX; x++ {
+			if p, ok := players[ coordinate{ x, y }]; ok {
+				if p.class == elf {
+					fmt.Printf("E")
+				} else if p.class == goblin {
+					fmt.Printf("G")
+				}
+			} else {
+				if board[ coordinate{ x, y }] == wall {
+					fmt.Printf("#")
+				} else if board[ coordinate{ x, y }] == empty {
+					fmt.Printf(".")
+				}
+			}
+
+		}
+		fmt.Printf("\n")
+	}
 
 }

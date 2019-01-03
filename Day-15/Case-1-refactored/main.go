@@ -5,6 +5,7 @@ import (
 	"os"
 	"bufio"
 	"sort"
+	"github.com/ef-ds/deque"
 )
 
 const (
@@ -176,17 +177,16 @@ func analyseCave(fileLocation string) {
 func locateTarget(startLocation coordinate) (route []coordinate) {
 	
 	startNode := node { location: startLocation, steps: 0 }
-	openList := []*node{}
-	openList = append(openList, &startNode)
+	openList := deque.Deque{}
+	openList.PushBack(&startNode)
 	closedList := make(map[coordinate]*node)
 	shortestRoute := 0
 	targetList := []*node{}
-	openListPlace := 0
 
-	for openListPlace < len(openList) {
+	for openList.Len() > 0 {
 
-		currentNode := openList[openListPlace]
-		openListPlace++
+		currentNodetest, _ := openList.PopFront()
+		currentNode := currentNodetest.(*node)
 
 		// If the coordinate is already in the closed list
 		if _, ok := closedList[ coordinate { currentNode.location.x, currentNode.location.y }]; ok {
@@ -223,7 +223,7 @@ func locateTarget(startLocation coordinate) (route []coordinate) {
 				steps: currentNode.steps + 1,
 			}
 
-			openList = append(openList, &newNode)
+			openList.PushBack(&newNode)
 
 		}
 

@@ -5,7 +5,6 @@ import (
 	"os"
 	"bufio"
 	"sort"
-	//"github.com/pkg/profile"
 )
 
 const (
@@ -75,8 +74,6 @@ var maxX, maxY int
 
 func main() {
 
-	//defer profile.Start(profile.CPUProfile, profile.ProfilePath(".")).Stop()
-
 	cave = make(map[coordinate]int)
 	players = make(map[coordinate]*player)
 
@@ -91,42 +88,35 @@ func main() {
 		}
 		sort.Sort(byXY(playersKeys))
 	
-		for i := 0; i < len(playersKeys); i++ {
+		for i, k := range playersKeys {
 
-			route := locateTarget(playersKeys[i])
+			if _, ok := players[k]; !ok || players[k].hitPoints <= 0 {
+				continue
+			}
+
+			route := locateTarget(k)
 			
 			if len(route) > 1 {
-				players[route[1]] = players[playersKeys[i]]
-				delete(players, playersKeys[i])
+				players[route[1]] = players[k]
+				delete(players, k)
 			}
 
 			if len(route) == 1 || len(route) == 2 {
 
 				if len(route) == 2 {
-					playersKeys[i] = route[1]
+					k = route[1]
 				}
 				
-				killedCoordinate := attackTarget(playersKeys[i])
-				if killedCoordinate.x != 0 && killedCoordinate.y != 0 {
-
-					// If a player has been killed make sure we remove the key from the list
-					for iPK, pK := range playersKeys {
-						if pK.x == killedCoordinate.x && pK.y == killedCoordinate.y {
-							playersKeys = append(playersKeys[:iPK], playersKeys[iPK+1:]...)
-							if iPK <= i {
-								i--
-							}
-						}
-					}					
+				if attackTarget(k) {
 
 					elfsFound := false
 					goblinsFound := false
 
 					totalHitPoints := 0
 					for _, p := range players {
-						if p.class == elf { elfsFound = true }
-						if p.class == goblin { goblinsFound = true }
-						totalHitPoints += p.hitPoints
+						if p.class == elf && p.hitPoints > 0 { elfsFound = true }
+						if p.class == goblin && p.hitPoints > 0 { goblinsFound = true }
+						if p.hitPoints > 0 { totalHitPoints += p.hitPoints }
 					}
 					
 					if !elfsFound || !goblinsFound {
@@ -197,7 +187,7 @@ func locateTarget(startLocation coordinate) (route []coordinate) {
 
 		currentNode := openList[openListPlace]
 		openListPlace++
-		//openList = append([]*node{}, openList[1:]...)
+
 		// If the coordinate is already in the closed list
 		if _, ok := closedList[ coordinate { currentNode.location.x, currentNode.location.y }]; ok {
 			continue
@@ -211,7 +201,7 @@ func locateTarget(startLocation coordinate) (route []coordinate) {
 		}
 
 		// If we find a location that has a player on it
-		if _, ok := players[currentNode.location]; ok && currentNode.location != startNode.location {
+		if _, ok := players[currentNode.location]; ok && currentNode.location != startNode.location && players[currentNode.location].hitPoints > 0 {
 			if players[currentNode.location].class != players[startNode.location].class {
 				currentNode.target = players[currentNode.location]
 				currentNode.location = currentNode.parent.location
@@ -220,19 +210,12 @@ func locateTarget(startLocation coordinate) (route []coordinate) {
 				if currentNode.steps < shortestRoute {
 					shortestRoute = currentNode.steps
 				}
+
 			}
 			continue
 		}
 
-		//NEIGHBOURLOOP:
 		for _, neighbour := range neighbours {
-		
-			// If the coordiante is already in the open list
-			/*for o := 0; o < len(openList); o++ {
-				if openList[o].location.x == currentNode.location.x + neighbour.x && openList[o].location.y == currentNode.location.y + neighbour.y {
-					continue NEIGHBOURLOOP
-				}
-			}*/
 
 			newNode := node { 
 				parent: currentNode,
@@ -261,15 +244,17 @@ func locateTarget(startLocation coordinate) (route []coordinate) {
 
 
 // Returns the coordinate of the killed target
-func attackTarget(attackerLocation coordinate) coordinate {
+func attackTarget(attackerLocation coordinate) bool {
 
 	targetLocations := []coordinate{}
 
 	for _, neighbour := range neighbours {
-		if _, ok := players[ coordinate{ attackerLocation.x + neighbour.x, attackerLocation.y + neighbour.y } ]; ok {
-			if players[attackerLocation].class != players[ coordinate{ attackerLocation.x + neighbour.x, attackerLocation.y + neighbour.y } ].class { 
-				targetLocations = append(targetLocations, coordinate{ attackerLocation.x + neighbour.x, attackerLocation.y + neighbour.y })
-			}
+		if _, ok := players[ coordinate{ attackerLocation.x + neighbour.x, attackerLocation.y + neighbour.y } ]; ok &&
+			players[attackerLocation].class != players[ coordinate{ attackerLocation.x + neighbour.x, attackerLocation.y + neighbour.y } ].class &&
+			players[ coordinate{ attackerLocation.x + neighbour.x, attackerLocation.y + neighbour.y } ].hitPoints > 0 { 
+		
+			targetLocations = append(targetLocations, coordinate{ attackerLocation.x + neighbour.x, attackerLocation.y + neighbour.y })
+		
 		}
 	}
 
@@ -278,13 +263,12 @@ func attackTarget(attackerLocation coordinate) coordinate {
 		sort.Sort(byHitPointsAndXY(targetLocations))
 		players[targetLocations[0]].hitPoints -= players[attackerLocation].attackPower
 		if players[targetLocations[0]].hitPoints <= 0 {
-			delete(players, targetLocations[0])
-			return targetLocations[0]
+			return true
 		}
 
 	}
 
-	return coordinate{}
+	return false
 
 }
 
@@ -294,10 +278,12 @@ func printCave() {
 	for y := 0; y <= maxY; y++ {
 		for x := 0; x <=maxX; x++ {
 			if p, ok := players[ coordinate{ x, y }]; ok {
-				if p.class == elf {
+				if p.class == elf && p.hitPoints > 0 {
 					fmt.Printf("E")
-				} else if p.class == goblin {
+				} else if p.class == goblin && p.hitPoints > 0 {
 					fmt.Printf("G")
+				} else {
+					fmt.Printf(".")
 				}
 			} else {
 				if cave[ coordinate{ x, y }] == wall {

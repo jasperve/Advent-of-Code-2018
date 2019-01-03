@@ -191,11 +191,13 @@ func locateTarget(startLocation coordinate) (route []coordinate) {
 	closedList := make(map[coordinate]*node)
 	shortestRoute := 0
 	targetList := []*node{}
+	openListPlace := 0
 
-	for len(openList) > 0 {
+	for openListPlace < len(openList) {
 
-		currentNode := openList[0]
-		openList = append([]*node{}, openList[1:]...)
+		currentNode := openList[openListPlace]
+		openListPlace++
+		//openList = append([]*node{}, openList[1:]...)
 		// If the coordinate is already in the closed list
 		if _, ok := closedList[ coordinate { currentNode.location.x, currentNode.location.y }]; ok {
 			continue

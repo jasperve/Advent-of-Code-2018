@@ -1,0 +1,70 @@
+addi 1 16 1 ->  vult reg 1 met 16                       -> spring naar instructie 17 (init)
+
+//init (vanaf regel 17)
+addi 4 2 4  ->  vult reg 4 met reg 4 + 2                    -> reg 4 = 2
+mulr 4 4 4  ->  vult reg 4 met reg 4 * reg 4                -> reg 4 = 4
+mulr 1 4 4  ->  vult reg 4 met reg 1 * reg 4                -> reg 4 = 76
+muli 4 11 4 ->  vult reg 4 met reg 4 * 11                   -> reg 4 = 836
+addi 3 3 3  ->  vult reg 3 met reg 3 + 3                    -> reg 3 = 3
+mulr 3 1 3  ->  vult reg 3 met reg 3 * reg 1                -> reg 3 = 3 * 22 = 66
+addi 3 4 3  ->  vult reg 3 met reg 3 + 4                    -> reg 3 = 70
+addr 4 3 4  ->  vult reg 4 met reg 4 + reg 3                -> reg 4 = 906    
+addr 1 0 1  ->  vult reg 1 met reg 1 + reg 0                -> reg 1 = 26 (reg 0 is 1) (sla volgende instructie over)
+seti 0 0 1  ->  vult reg 0 met 0                            -> spring terug naar begin programma (deze slaan we over)
+setr 1 5 3  ->  vult reg 3 met reg 1                        -> reg 3 = 27
+mulr 3 1 3  ->  vult reg 3 met reg 3 * reg 1                -> reg 3 = 27 * 28 = 756
+addr 1 3 3  ->  vult reg 3 met reg 1 + reg 3                -> reg 3 = 29 + 756 = 785
+mulr 1 3 3  ->  vult reg 3 met reg 1 * reg 3                -> reg 3 = 30 * 785 = 23550
+muli 3 14 3 ->  vult reg 3 met reg 3 * 14                   -> reg 3 = 23550 * 14 = 329700
+mulr 3 1 3  ->  vult reg 3 met reg 3 * reg 1                -> reg 3 = 329700 * 32 = 10550400
+addr 4 3 4  ->  vult reg 4 met reg 4 + reg 3                -> reg 4 = 906 + 10550400 = 10551306
+seti 0 0 0  ->  vult reg 0 met 0                            -> reg 0 = 0
+seti 0 1 1  ->  vult reg 1 met 0                            -> reg 1 = 0 (springe naar begin programma op regel 1)
+
+//begin programma
+seti 1 2 5  ->  vult reg 5 met 1                        
+seti 1 2 2  ->  reset reg 2 naar 1
+mulr 5 2 3  ->  vult reg 3 met reg 2 * reg 5
+eqrr 3 4 3  ->  vult reg 3 met 1 (if reg 3 == reg 4)
+addr 3 1 1  ->  vult reg 1 met reg 1 + reg 3            -> slaat mogelijk een instructie over
+addi 1 1 1  ->  vult reg 1 met register reg 1 + 1       -> slaat mogelijk een instructie over
+addr 5 0 0  ->  vult reg 0 met register 5 + register 0
+addi 2 1 2  ->  vult reg 2 met register 2 + 1
+gtrr 2 4 3  ->  vult reg 3 met 1 (if reg 2 > reg 4)
+addr 1 3 1  ->  vult reg 1 met reg 1 + reg 3            -> slaat mogelijk een instructie over
+seti 2 8 1  ->  reset reg 1 naar 2                      -> gaat terug naar begin van loop
+addi 5 1 5  ->  vult reg 5 met reg 5 + 1
+gtrr 5 4 3  ->  vult reg 3 met 1 (if reg 5 > reg 4)
+addr 3 1 1  ->  vult reg 1 met reg3 + reg1              -> slaat mogelijk een instructie over
+seti 1 1 1  ->  reset reg 1 naar 1                      -> gaat terug naar begin van de loop
+mulr 1 1 1  ->  vult reg 1 met reg 1 * reg 1            -> exit
+
+
+
+reg = []int{0, 0, 0, 10550400, 10551306, 0}
+reg[5] = 1
+
+for {
+    reg[2] = 1
+    for {
+        reg[3] = reg[2] * reg[5]
+        if reg[3] == reg[4] {
+            reg[0] = reg[5] + reg[0]
+        } else {
+            reg[3] = 0
+        }
+        reg[2]++
+        if reg[2] > reg[4] {
+            reg[5] = reg[5] + 1
+            if reg[5] > reg[4] {
+                fmt.Println(reg)
+            } else {
+                reg[3] = 0
+                break
+            }
+        } else {
+            reg[3] = 0
+        }
+    }
+}
+

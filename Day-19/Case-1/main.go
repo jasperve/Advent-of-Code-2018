@@ -90,9 +90,6 @@ func main() {
 		ipValue++
 
 		fmt.Println("after:", register)
-		//fmt.Println("ipvalue", ipValue)
-		//fmt.Println()
-		//fmt.Println()
 
 	}
 

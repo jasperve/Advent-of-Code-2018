@@ -16,7 +16,6 @@ const (
 	sand  = 0
 	clay  = 1
 	water = 2
-	temp  = 3
 
 	up    = 0
 	left  = 1
@@ -98,35 +97,65 @@ func main() {
 
 	// Start filling the grid with water
 	fillWater(minY, 500)
-	displayFlow()
 
-	counter := 0
+	whileFlowingCounter := 0
 
 	for y := minY; y <= maxY; y++ {
-		for x := minX; x < maxX; x++ {
+		for x := minX; x <= maxX; x++ {
 			if grid[y][x] == water {
-				counter++
+				whileFlowingCounter++
 			}
 		}
 	}
 
-	fmt.Println(counter)
+	fmt.Println("While the well is flowing:", whileFlowingCounter)
+	displayFlow("WhileFlowing.png")
+	
+	for y := minY; y <= maxY; y++ {
+		for x := minX; x <= maxX; x++ {
+			if grid[y][x] == water && (x == minX || x == maxX) {
+				grid[y][x] = sand
+			}
+			if grid[y][x] == water && (grid[y][x-1] == sand || grid[y][x+1] == sand) {
+				grid[y][x] = sand
+			}
+		}
+		for x := maxX; x >= minX; x-- {
+			if grid[y][x] == water && (x == minX || x == maxX) {
+				grid[y][x] = sand
+			}
+			if grid[y][x] == water && (grid[y][x-1] == sand || grid[y][x+1] == sand) {
+				grid[y][x] = sand
+			}
+		}
+	}
+
+	afterFlowingCounter := 0
+
+	for y := minY; y <= maxY; y++ {
+		for x := minX; x <= maxX; x++ {
+			if grid[y][x] == water {
+				afterFlowingCounter++
+			}
+		}
+	}
+
+	fmt.Println("After the well has stopped flowing:", afterFlowingCounter)
+	displayFlow("AfterFlowing.png")
 
 }
 
 // Returns true for obstruction found, false for clear path
 func fillWater(y int, x int) {
 
-	//grid[y][x] = water
-
 	//maxY = 50
 OUTER:
 	for y <= maxY {
 
 		// If the CURRENT SQUARE consists of SAND
-		//if grid[y][x] == sand  {
-		//grid[y][x] = waterf
-		//}
+		if grid[y][x] == sand {
+			grid[y][x] = water
+		}
 
 		// If the SQUARE BELOW consists of SAND
 		if grid[y+1][x] == sand || grid[y+1][x] == water {
@@ -139,7 +168,7 @@ OUTER:
 		FINDLOOPLEFT:
 			for subY := y; subY >= minY; subY-- {
 				for subX := x - 1; subX >= minX; subX-- {
-					if grid[subY][subX] != clay && grid[subY+1][subX] != clay && grid[subY][subX+1] != clay && grid[subY][subX-1] != clay && grid[subY+1][subX+1] == clay {
+					if grid[subY][subX] != clay && grid[subY+1][subX] != clay && grid[subY][subX+1] != clay && grid[subY][subX-1] == sand && grid[subY+1][subX+1] == clay {
 						borderYLeft = subY
 						borderXLeft = subX
 						break FINDLOOPLEFT
@@ -153,7 +182,7 @@ OUTER:
 		FINDLOOPRIGHT:
 			for subY := y; subY >= minY; subY-- {
 				for subX := x + 1; subX <= maxX; subX++ {
-					if grid[subY][subX] != clay && grid[subY+1][subX] != clay && grid[subY][subX-1] != clay && grid[subY][subX+1] != clay && grid[subY+1][subX-1] == clay {
+					if grid[subY][subX] != clay && grid[subY+1][subX] != clay && grid[subY][subX-1] != clay && grid[subY][subX+1] == sand && grid[subY+1][subX-1] == clay {
 						borderYRight = subY
 						borderXRight = subX
 						break FINDLOOPRIGHT
@@ -172,9 +201,16 @@ OUTER:
 			}
 
 			// FILL LEFT SIDE TO MAX LEVEL
-			for subY := y; subY >= border+1; subY-- {
+		FILLLOOPLEFT:
+			for subY := y; subY >= border; subY-- {
 				for subX := x; subX >= minX; subX-- {
+
+					if subX != x && grid[subY][subX] != clay && grid[subY+1][subX] != clay && grid[subY][subX+1] != clay && grid[subY][subX-1] == sand && grid[subY+1][subX+1] == clay {
+						break FILLLOOPLEFT
+					}
+
 					grid[subY][subX] = water
+
 					if grid[subY][subX-1] == clay {
 						break
 					}
@@ -183,38 +219,33 @@ OUTER:
 			}
 
 			// FILL RIGHT SIDE TO MAX LEVEL
-			for subY := y; subY >= border+1; subY-- {
+		FILLLOOPRIGHT:
+			for subY := y; subY >= border; subY-- {
 				for subX := x; subX < maxX; subX++ {
+
+					if subX != x && grid[subY][subX] != clay && grid[subY+1][subX] != clay && grid[subY][subX-1] != clay && grid[subY][subX+1] == sand && grid[subY+1][subX-1] == clay {
+						break FILLLOOPRIGHT
+					}
+
 					grid[subY][subX] = water
+
 					if grid[subY][subX+1] == clay {
 						break
 					}
+
 				}
 			}
 
 			if borderYLeft == borderYRight {
-				if grid[border][borderXLeft] == sand {
-					grid[border][borderXLeft] = temp
-				}
-				if grid[border][borderXRight] == sand {
-					grid[border][borderXLeft] = temp
-				}
-			}
-
-			if borderYLeft == borderYRight {
-				if grid[border][borderXLeft] == temp {
-					grid[border][borderXLeft] = water
+				if grid[border][borderXLeft] != water {
 					fillWater(border, borderXLeft)
 				}
-				if grid[border][borderXRight] == temp {
-					grid[border][borderXRight] = water
+				if grid[border][borderXRight] != water {
 					fillWater(border, borderXRight)
 				}
 			} else if borderYLeft >= borderYRight {
-				//grid[border][borderXLeft] = water
 				fillWater(border, borderXLeft)
 			} else if borderYRight > borderYLeft {
-				//grid[border][borderXRight] = water
 				fillWater(border, borderXRight)
 			}
 
@@ -226,7 +257,7 @@ OUTER:
 
 }
 
-func displayFlow() {
+func displayFlow(location string) {
 
 	// Create a image based on the grid
 	img := image.NewRGBA(image.Rectangle{image.Point{minX - 2, minY - 2}, image.Point{maxX + 2, maxY + 2}})
@@ -248,9 +279,7 @@ func displayFlow() {
 
 	img.Set(500, 0, red)
 
-	file, _ := os.Create("output.png")
+	file, _ := os.Create(location)
 	png.Encode(file, img)
-
-	fmt.Println("file created")
 
 }

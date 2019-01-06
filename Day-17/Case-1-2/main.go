@@ -75,17 +75,6 @@ func main() {
 	minX -= 5
 	maxX += 5
 
-	// Fill the empty spots in the grid with sand
-	for x := minX; x <= maxX; x++ {
-		for y := minY; y <=maxY; y++ {
-			if _, ok := grid[coordinate{x, y}]; !ok {
-				grid[coordinate{x, y}] = sand
-			}
-		}
-	}
-
-	fmt.Println(minX, maxX, minY, maxY)
-
 	// Start filling the grid with water
 	fillWater(500, minY)
 
